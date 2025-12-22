@@ -23,17 +23,20 @@ def get_all_metadata():
         facs = cursor.execute('SELECT id, name FROM faculties WHERE university_id = ?', (uni['id'],)).fetchall()
         for fac in facs:
             fac_name = fac['name']
-            data[uni_name][fac_name] = {}
+            if fac_name not in data[uni_name]:
+                data[uni_name][fac_name] = {}
             
             courses = cursor.execute('SELECT id, name FROM courses WHERE faculty_id = ?', (fac['id'],)).fetchall()
             for course in courses:
                 course_name = course['name']
-                data[uni_name][fac_name][course_name] = {}
+                if course_name not in data[uni_name][fac_name]:
+                    data[uni_name][fac_name][course_name] = {}
                 
                 sems = cursor.execute('SELECT id, name FROM semesters WHERE course_id = ?', (course['id'],)).fetchall()
                 for sem in sems:
                     sem_name = sem['name']
-                    data[uni_name][fac_name][course_name][sem_name] = {}
+                    if sem_name not in data[uni_name][fac_name][course_name]:
+                        data[uni_name][fac_name][course_name][sem_name] = {}
                     
                     subs = cursor.execute('SELECT id, name FROM subjects WHERE semester_id = ?', (sem['id'],)).fetchall()
                     for sub in subs:
