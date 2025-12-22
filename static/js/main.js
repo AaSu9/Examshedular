@@ -8,6 +8,8 @@ let focusModeActive = false;
 let completedDays = JSON.parse(localStorage.getItem('padsala_completed_days') || "[]");
 let focusXP = parseInt(localStorage.getItem('padsala_xp') || "0");
 let concentrationStreak = parseInt(localStorage.getItem('padsala_streak') || "0");
+let currentSchedule = JSON.parse(localStorage.getItem('padsala_schedule') || "null");
+let wizardInputs = JSON.parse(localStorage.getItem('padsala_wizard_inputs') || "{}");
 
 const RANKS = [
     { min: 0, title: "INITIATE" },
@@ -32,22 +34,19 @@ function navigateTo(step) {
 async function initWizard() {
     try {
         const res = await fetch('/api/metadata');
-        if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         db = await res.json();
-        console.log('Database loaded:', Object.keys(db));
 
-        if (Object.keys(db).length === 0) {
-            console.error('Database is empty!');
-            alert('Database not loaded. Please refresh the page.');
-            return;
+        // Check for existing schedule
+        if (currentSchedule) {
+            console.log("Loading persisted schedule...");
+            renderBlueprint(currentSchedule);
+            navigateTo(4);
+        } else {
+            populateDropdown('select-university', Object.keys(db));
         }
-
-        populateDropdown('select-university', Object.keys(db));
     } catch (e) {
         console.error("Sync Failed", e);
-        alert(`Failed to load universities: ${e.message}`);
     }
 }
 
@@ -127,42 +126,73 @@ async function generateSchedule() {
     }));
 
     try {
+        const inputs = {
+            university: document.getElementById('select-university').value,
+            faculty: document.getElementById('select-faculty').value,
+            course: document.getElementById('select-course').value,
+            semester: document.getElementById('select-semester').value,
+            daily_hours: document.getElementById('daily-hours').value,
+            session_mins: document.getElementById('session-duration').value,
+            break_mins: document.getElementById('break-duration').value,
+            start_time: document.getElementById('start-time').value,
+            exams: exams
+        };
+
         const res = await fetch('/api/generate-schedule', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                university: document.getElementById('select-university').value,
-                faculty: document.getElementById('select-faculty').value,
-                course: document.getElementById('select-course').value,
-                semester: document.getElementById('select-semester').value,
-                daily_hours: document.getElementById('daily-hours').value,
-                session_mins: document.getElementById('session-duration').value,
-                break_mins: document.getElementById('break-duration').value,
-                start_time: document.getElementById('start-time').value,
-                exams: exams
-            })
+            body: JSON.stringify(inputs)
         });
         const data = await res.json();
+
+        // PERSIST
+        currentSchedule = data;
+        wizardInputs = inputs;
+        localStorage.setItem('padsala_schedule', JSON.stringify(data));
+        localStorage.setItem('padsala_wizard_inputs', JSON.stringify(inputs));
+
         renderBlueprint(data);
         navigateTo(4);
     } catch (e) { alert("Compute Error"); }
 }
 
+function resetPlan() {
+    if (confirm("Reset current plan and start over?")) {
+        localStorage.removeItem('padsala_schedule');
+        localStorage.removeItem('padsala_wizard_inputs');
+        location.reload();
+    }
+}
+
 function renderBlueprint(data) {
     const container = document.getElementById('blueprint-content');
-    let html = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 2rem;">`;
-    data.days.forEach(day => {
+    let html = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2>Master Timeline</h2>
+            <button class="control-btn" onclick="resetPlan()" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2)">
+                <i data-lucide="refresh-cw"></i> Reset Protocol
+            </button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 2rem;">`;
+
+    data.days.forEach((day, idx) => {
+        const isHoliday = day.tasks.length === 1 && day.tasks[0].activity.includes("HOLIDAY");
         html += `
-        <div class="glass-card" style="padding: 2rem;">
+        <div class="glass-card" style="padding: 2rem; border-color: ${day.is_exam_day ? '#ef4444' : 'rgba(255,255,255,0.1)'}">
             <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
                 <span style="opacity: 0.7;">${day.bs_date}</span>
-                <span style="font-weight: 700; color: #a78bfa;">${day.subject}</span>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button class="control-btn" style="padding: 4px 8px; font-size: 0.7rem; height: auto;" onclick="editDayHours(${idx})">
+                        <i data-lucide="clock" style="width: 12px; height: 12px;"></i> Adjust
+                    </button>
+                    <span style="font-weight: 700; color: #a78bfa;">${day.subject}</span>
+                </div>
             </div>
             <h3 style="margin-bottom: 1.5rem;">${day.daily_focus || 'Focus Session'}</h3>
-            <div>
+            <div id="day-tasks-${idx}">
                 ${day.tasks.map(t => `
-                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer;" 
-                         onclick="enterFocus('${day.subject}', '${t.activity.replace(/'/g, "\\'")}', ${t.minutes})">
+                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; ${isHoliday ? 'opacity: 0.5' : 'cursor: pointer;'}" 
+                         ${!isHoliday ? `onclick="enterFocus('${day.subject}', '${t.activity.replace(/'/g, "\\'")}', ${t.minutes})"` : ''}>
                         <span style="color: #d946ef; font-weight: 700; margin-right: 1rem;">${t.time}</span>
                         ${t.activity}
                     </div>
@@ -172,6 +202,40 @@ function renderBlueprint(data) {
     });
     html += `</div>`;
     container.innerHTML = html;
+    lucide.createIcons();
+}
+
+async function editDayHours(dayIdx) {
+    const day = currentSchedule.days[dayIdx];
+    const newHours = prompt(`Adjust study hours for ${day.bs_date} (${day.subject}). Enter 0 for Holiday:`, "8");
+
+    if (newHours === null) return;
+
+    const h = parseInt(newHours);
+    if (isNaN(h)) return;
+
+    try {
+        const res = await fetch('/api/replan-day', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                subject: day.subject,
+                focus: day.daily_focus || "Revision",
+                hours: h,
+                session_mins: wizardInputs.session_mins || 90,
+                break_mins: wizardInputs.break_mins || 15,
+                start_time: wizardInputs.start_time || "06:00"
+            })
+        });
+        const result = await res.json();
+
+        // Update local state
+        day.tasks = result.tasks;
+        localStorage.setItem('padsala_schedule', JSON.stringify(currentSchedule));
+
+        // Re-render
+        renderBlueprint(currentSchedule);
+    } catch (e) { alert("Adjustment Error"); }
 }
 
 // FOCUS GALAXY LOGIC

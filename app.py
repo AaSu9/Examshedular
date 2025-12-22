@@ -59,5 +59,26 @@ def generate_schedule():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/replan-day', methods=['POST'])
+def replan_day():
+    try:
+        from planner import get_micro_plan
+        data = request.json
+        subject = data.get('subject')
+        focus = data.get('focus', 'Revision')
+        hours = int(data.get('hours', 8))
+        session_mins = int(data.get('session_mins', 90))
+        break_mins = int(data.get('break_mins', 15))
+        start_time = data.get('start_time', "06:00")
+        
+        # Mark as holiday if hours <= 0
+        if hours <= 0:
+            return jsonify({"tasks": [{"time": "00:00 - 23:59", "activity": "HOLIDAY / REST DAY", "type": "break", "minutes": 1440}]})
+
+        tasks = get_micro_plan(subject, focus, hours, session_mins, break_mins, start_time_str=start_time)
+        return jsonify({"tasks": tasks})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
