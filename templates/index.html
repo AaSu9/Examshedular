@@ -70,6 +70,11 @@
             <div id="step-2" class="step-container">
                 <div class="glass-card">
                     <h2 style="margin-bottom: 2rem;">Configuration</h2>
+                    <div style="margin-bottom: 2rem;">
+                        <label>Timeline Name</label>
+                        <input type="text" id="schedule-name" placeholder="e.g., Regular Exams + Back papers"
+                            class="stream-input" style="width: 100%;">
+                    </div>
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; margin-bottom: 2rem;">
                         <div><label>University</label><select id="select-university"
                                 onchange="updateFaculties()"></select>
@@ -120,6 +125,10 @@
 
         <!-- DASHBOARD VIEW -->
         <div id="view-dashboard" class="view-section">
+            <div id="timeline-gallery"
+                style="display: flex; gap: 1rem; margin-bottom: 2rem; overflow-x: auto; padding-bottom: 1rem;">
+                <!-- Buttons will appear here -->
+            </div>
             <div id="blueprint-content">
                 <!-- If no schedule, show empty state -->
                 <div class="glass-card" style="text-align: center; padding: 4rem 2rem;">

@@ -8,7 +8,8 @@ let focusModeActive = false;
 let completedDays = JSON.parse(localStorage.getItem('padsala_completed_days') || "[]");
 let focusXP = parseInt(localStorage.getItem('padsala_xp') || "0");
 let concentrationStreak = parseInt(localStorage.getItem('padsala_streak') || "0");
-let currentSchedule = JSON.parse(localStorage.getItem('padsala_schedule') || "null");
+let savedSchedules = JSON.parse(localStorage.getItem('padsala_saved_schedules') || "[]");
+let currentSchedule = null;
 let wizardInputs = JSON.parse(localStorage.getItem('padsala_wizard_inputs') || "{}");
 
 const RANKS = [
@@ -51,9 +52,11 @@ async function initWizard() {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         db = await res.json();
 
-        // Check for existing schedule
-        if (currentSchedule) {
-            console.log("Loading persisted schedule...");
+        // Check for existing schedules
+        if (savedSchedules.length > 0) {
+            console.log("Loading persisted gallery...");
+            currentSchedule = savedSchedules[0];
+            renderGallery();
             renderBlueprint(currentSchedule);
             switchView('dashboard');
         } else {
@@ -160,22 +163,58 @@ async function generateSchedule() {
         });
         const data = await res.json();
 
-        // PERSIST
+        // PERSIST MULTIPLE
+        const name = document.getElementById('schedule-name').value || `Timeline ${savedSchedules.length + 1}`;
+        const newEntry = { name, data, inputs };
+
+        savedSchedules.push(newEntry);
+        localStorage.setItem('padsala_saved_schedules', JSON.stringify(savedSchedules));
+
         currentSchedule = data;
         wizardInputs = inputs;
-        localStorage.setItem('padsala_schedule', JSON.stringify(data));
-        localStorage.setItem('padsala_wizard_inputs', JSON.stringify(inputs));
 
+        renderGallery();
         renderBlueprint(data);
         switchView('dashboard');
     } catch (e) { alert("Compute Error"); }
 }
 
+function renderGallery() {
+    const gallery = document.getElementById('timeline-gallery');
+    if (!gallery) return;
+    gallery.innerHTML = savedSchedules.map((s, idx) => `
+        <button class="nav-link ${currentSchedule === s.data ? 'active' : ''}" 
+                onclick="loadTimeline(${idx})" 
+                style="white-space: nowrap; border: 1px solid rgba(255,255,255,0.1)">
+            ${s.name}
+        </button>
+    `).join('');
+
+    if (savedSchedules.length < 5) {
+        gallery.innerHTML += `
+            <button class="nav-link" onclick="switchView('home')" style="border: 1px dashed var(--primary); color: var(--primary)">
+                + New Timeline
+            </button>
+        `;
+    }
+}
+
+function loadTimeline(idx) {
+    currentSchedule = savedSchedules[idx].data;
+    wizardInputs = savedSchedules[idx].inputs;
+    renderGallery();
+    renderBlueprint(currentSchedule);
+}
+
 function resetPlan() {
-    if (confirm("Reset current plan and start over?")) {
-        localStorage.removeItem('padsala_schedule');
-        localStorage.removeItem('padsala_wizard_inputs');
-        location.reload();
+    if (confirm("Delete this specific timeline?")) {
+        savedSchedules = savedSchedules.filter(s => s.data !== currentSchedule);
+        localStorage.setItem('padsala_saved_schedules', JSON.stringify(savedSchedules));
+        if (savedSchedules.length > 0) {
+            loadTimeline(0);
+        } else {
+            location.reload();
+        }
     }
 }
 
@@ -266,7 +305,10 @@ document.getElementById('btn-save-adjust').onclick = async () => {
         const result = await res.json();
 
         day.tasks = result.tasks;
-        localStorage.setItem('padsala_schedule', JSON.stringify(currentSchedule));
+        // Sync the correct schedule in the list
+        const schedEntry = savedSchedules.find(s => s.data === currentSchedule);
+        if (schedEntry) localStorage.setItem('padsala_saved_schedules', JSON.stringify(savedSchedules));
+
         renderBlueprint(currentSchedule);
         closeAdjustModal();
     } catch (e) { alert("Adjustment Error"); }
