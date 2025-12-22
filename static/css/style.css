@@ -142,6 +142,8 @@ body {
 }
 
 .progress-ring {
+    width: 350px;
+    height: 350px;
     transform: rotate(-90deg);
     filter: drop-shadow(0 0 20px var(--primary));
 }
@@ -435,5 +437,75 @@ label {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .app-shell {
+        padding: 1rem;
+        width: 100%;
+    }
+
+    .app-header {
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .hero-title {
+        font-size: 2.5rem;
+    }
+
+    .glass-card {
+        padding: 1.5rem;
+    }
+
+    /* Configuration Grid - Single Column on Mobile */
+    #step-2 .glass-card>div[style*="grid-template-columns: repeat(2"] {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    #step-2 .glass-card>div[style*="grid-template-columns: repeat(4"] {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    #subjects-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+    }
+
+    /* Focus Mode Overlay */
+    .focus-container {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .focus-sidebar {
+        width: 100%;
+        order: 2;
+        margin-bottom: 6rem;
+        /* Space for music bar */
+    }
+
+    .timer-sector {
+        order: 1;
+        margin-bottom: 2rem;
+    }
+
+    .progress-ring {
+        width: 280px;
+        height: 280px;
+    }
+
+    .timer-text {
+        font-size: 3.5rem;
+    }
+
+    .music-bar {
+        padding: 0 1rem 1.5rem 1rem;
     }
 }
