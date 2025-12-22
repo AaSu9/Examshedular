@@ -54,9 +54,12 @@ def seed_purbanchal():
         for sub_name in subjects:
             cursor.execute("INSERT OR IGNORE INTO subjects (semester_id, name) VALUES (?, ?)", (sem_id, sub_name))
 
+    # FINAL CLEANUP: Remove all universities except PU and TU as requested
+    cursor.execute("DELETE FROM universities WHERE name NOT LIKE 'Purbanchal%' AND name NOT LIKE 'Tribhuvan%'")
+    
     conn.commit()
     conn.close()
-    print("Purbanchal University data seeded successfully.")
+    print("Cleanup complete. Purbanchal University data seeded successfully.")
 
 if __name__ == '__main__':
     seed_purbanchal()
