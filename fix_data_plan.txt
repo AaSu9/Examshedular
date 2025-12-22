@@ -1,0 +1,66 @@
+import sqlite3
+import json
+
+# Consolidated and Fixed Syllabus Data
+SYLLABUS_DATA = {
+    "Tribhuvan University (TU)": {
+        "Science & Technology": {
+            "B.Sc. CSIT": {
+                "1st Sem": {
+                    "Introduction to IT": ["IT Fundamentals", "Hardware & Software", "Input/Output", "Data Storage", "Networking"],
+                    "C Programming": ["Tokens & Data Types", "Control Statements", "Functions", "Arrays", "Pointers", "File Handling"],
+                    "Digital Logic": ["Number Systems", "Boolean Algebra", "Logic Gates", "Combinational Circuits", "Sequential Circuits"],
+                    "Mathematics I": ["Set Theory", "Functions & Graphs", "Matrix & Determinants", "Limits", "Derivatives"],
+                    "Physics": ["Mechanics", "Heat & Thermodynamics", "Optics", "Electrostatics"]
+                }
+            }
+        }
+    },
+    "Pokhara University (PU)": {
+        "Management": {
+            "BBA": {
+                "1st Sem": {
+                    "Business Communication": ["Formal Writing", "Presentation", "Reports"],
+                    "Principles of Management": ["Planning", "Organizing", "Leading", "Controlling"]
+                }
+            }
+        }
+    },
+    "Kathmandu University (KU)": {
+        "Engineering": {
+            "B.E. Computer Engineering": {
+                "1st Year (I)": {
+                    "Physics": ["Quantum Mechanics", "Electromagnetism"],
+                    "Calculus": ["Single Variable Calculus", "Multi-variable Calculus"]
+                }
+            }
+        }
+    },
+    "Purbanchal University (PU)": {
+        "Engineering": {
+            "Bachelor in Computer Engineering": {
+                "Semester 1": {
+                    "Mathematics I": ["Matrix", "Calculus", "Vectors", "Geometry"],
+                    "Physics": ["Mechanics", "Waves", "Optics", "Electromagnetism"],
+                    "English for Technical Communication": ["Grammar", "Technical Writing", "Reports"],
+                    "Computer Programming": ["C Syntax", "Loops", "Functions", "Pointers", "Files"],
+                    "Fundamental of Computing Technology": ["OS Basics", "Networking", "Database Intro"],
+                    "Engineering Drawing": ["Projections", "Orthographic", "Isometric"],
+                    "Workshop Technology": ["Carpentry", "Foundry", "Welding", "Machine Shop"]
+                },
+                "Semester 2": {
+                    "Mathematics II": ["Calculus II", "Differential Equations"],
+                    "Chemistry": ["Organic", "Inorganic", "Physical"],
+                    "Object Oriented Programming with C++": ["Classes", "Inheritance", "Templates"],
+                    "Digital Logic": ["Gates", "Sequential Circuits", "Counters"],
+                    "Basic Electrical Engineering": ["AC Circuits", "Transformers"],
+                    "Applied Mechanics": ["Forces", "Equilibrium", "Friction"]
+                }
+                # (Remaining semesters will be added via seed script or here)
+            }
+        }
+    }
+}
+
+# (The script would continue to populate everything)
+# To save time and ensure Purbanchal works, I will fix the existing seed script to be more robust.
