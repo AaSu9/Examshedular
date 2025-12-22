@@ -225,7 +225,6 @@
             <!-- BOTTOM: MUSIC PLAYER -->
             <div class="music-bar">
                 <div class="visualizer-container">
-                    <!-- Simulated Equalizer Bars -->
                     <div class="v-bar" style="animation-delay: 0s"></div>
                     <div class="v-bar" style="animation-delay: 0.1s"></div>
                     <div class="v-bar" style="animation-delay: 0.2s"></div>
@@ -247,6 +246,38 @@
                     </div>
                     <i data-lucide="skip-forward" style="cursor: pointer;"></i>
                 </div>
+            </div>
+        </div>
+
+        <!-- GALAXY ADJUST MODAL -->
+        <div id="adjust-modal" class="modal-overlay">
+            <div class="glass-card modal-content animate-in">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h2><i data-lucide="sliders" style="color: #a78bfa;"></i> Time Distortion</h2>
+                    <button class="control-btn" onclick="closeAdjustModal()"><i data-lucide="x"></i></button>
+                </div>
+
+                <div style="margin-bottom: 2rem;">
+                    <label style="display: flex; justify-content: space-between;">
+                        <span>Study Intensity</span>
+                        <span id="label-hours-val" style="color: #d946ef; font-weight: 800;">8 Hours</span>
+                    </label>
+                    <input type="range" id="adjust-hours-range" min="0" max="18" step="1" value="8"
+                        style="width: 100%; margin-top: 1rem;"
+                        oninput="document.getElementById('label-hours-val').innerText = this.value + ' Hours'">
+                    <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.5rem;">Select 0 for a HOLIDAY / REST DAY.
+                    </p>
+                </div>
+
+                <div style="margin-bottom: 2rem;">
+                    <label>Shift Realities (Start Time)</label>
+                    <input type="time" id="adjust-start-time" class="stream-input"
+                        style="margin-top: 1rem; width: 100%;">
+                </div>
+
+                <button class="btn-primary" id="btn-save-adjust" style="width: 100%; justify-content: center;">
+                    Apply Distortion <i data-lucide="zap"></i>
+                </button>
             </div>
         </div>
 

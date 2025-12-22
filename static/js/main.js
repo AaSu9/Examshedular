@@ -224,21 +224,31 @@ function renderBlueprint(data) {
     lucide.createIcons();
 }
 
-async function editDayHours(dayIdx) {
+let currentEditingDayIdx = null;
+
+function openAdjustModal(dayIdx) {
+    currentEditingDayIdx = dayIdx;
     const day = currentSchedule.days[dayIdx];
 
-    // 1. Prompt for Hours
-    const newHours = prompt(`How many hours will you study on ${day.bs_date}? (Enter 0 for a full Rest Day)`, "10");
-    if (newHours === null) return;
-    const h = parseInt(newHours);
-    if (isNaN(h)) return;
+    // Set initial values
+    document.getElementById('adjust-hours-range').value = 8;
+    document.getElementById('label-hours-val').innerText = "8 Hours";
+    document.getElementById('adjust-start-time').value = wizardInputs.start_time || "06:00";
 
-    // 2. Prompt for Start Time
-    let startTime = wizardInputs.start_time || "06:00";
-    if (h > 0) {
-        const newStartTime = prompt(`What time do you want to start studying on ${day.bs_date}? (Format HH:MM, e.g., 05:00)`, startTime);
-        if (newStartTime !== null) startTime = newStartTime;
-    }
+    document.getElementById('adjust-modal').classList.add('active');
+}
+
+function closeAdjustModal() {
+    document.getElementById('adjust-modal').classList.remove('active');
+    currentEditingDayIdx = null;
+}
+
+document.getElementById('btn-save-adjust').onclick = async () => {
+    if (currentEditingDayIdx === null) return;
+
+    const h = parseInt(document.getElementById('adjust-hours-range').value);
+    const startTime = document.getElementById('adjust-start-time').value;
+    const day = currentSchedule.days[currentEditingDayIdx];
 
     try {
         const res = await fetch('/api/replan-day', {
@@ -255,13 +265,15 @@ async function editDayHours(dayIdx) {
         });
         const result = await res.json();
 
-        // Update local state
         day.tasks = result.tasks;
         localStorage.setItem('padsala_schedule', JSON.stringify(currentSchedule));
-
-        // Re-render
         renderBlueprint(currentSchedule);
+        closeAdjustModal();
     } catch (e) { alert("Adjustment Error"); }
+};
+
+async function editDayHours(dayIdx) {
+    openAdjustModal(dayIdx);
 }
 
 // FOCUS GALAXY LOGIC
