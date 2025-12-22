@@ -32,14 +32,37 @@ function navigateTo(step) {
 async function initWizard() {
     try {
         const res = await fetch('/api/metadata');
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
         db = await res.json();
+        console.log('Database loaded:', Object.keys(db));
+
+        if (Object.keys(db).length === 0) {
+            console.error('Database is empty!');
+            alert('Database not loaded. Please refresh the page.');
+            return;
+        }
+
         populateDropdown('select-university', Object.keys(db));
-    } catch (e) { console.error("Sync Failed", e); }
+    } catch (e) {
+        console.error("Sync Failed", e);
+        alert(`Failed to load universities: ${e.message}`);
+    }
 }
 
 function populateDropdown(id, items) {
     const el = document.getElementById(id);
-    if (el) el.innerHTML = '<option value="">Select Option</option>' + items.map(i => `<option value="${i}">${i}</option>`).join('');
+    if (!el) {
+        console.error(`Element with id '${id}' not found!`);
+        return;
+    }
+    if (!items || items.length === 0) {
+        el.innerHTML = '<option value="">No options available</option>';
+        return;
+    }
+    el.innerHTML = '<option value="">Select Option</option>' + items.map(i => `<option value="${i}">${i}</option>`).join('');
+    console.log(`Populated ${id} with ${items.length} items`);
 }
 
 function updateFaculties() {
