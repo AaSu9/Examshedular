@@ -207,12 +207,19 @@ function renderBlueprint(data) {
 
 async function editDayHours(dayIdx) {
     const day = currentSchedule.days[dayIdx];
-    const newHours = prompt(`Adjust study hours for ${day.bs_date} (${day.subject}). Enter 0 for Holiday:`, "8");
 
+    // 1. Prompt for Hours
+    const newHours = prompt(`How many hours will you study on ${day.bs_date}? (Enter 0 for a full Rest Day)`, "10");
     if (newHours === null) return;
-
     const h = parseInt(newHours);
     if (isNaN(h)) return;
+
+    // 2. Prompt for Start Time
+    let startTime = wizardInputs.start_time || "06:00";
+    if (h > 0) {
+        const newStartTime = prompt(`What time do you want to start studying on ${day.bs_date}? (Format HH:MM, e.g., 05:00)`, startTime);
+        if (newStartTime !== null) startTime = newStartTime;
+    }
 
     try {
         const res = await fetch('/api/replan-day', {
@@ -224,7 +231,7 @@ async function editDayHours(dayIdx) {
                 hours: h,
                 session_mins: wizardInputs.session_mins || 90,
                 break_mins: wizardInputs.break_mins || 15,
-                start_time: wizardInputs.start_time || "06:00"
+                start_time: startTime
             })
         });
         const result = await res.json();
