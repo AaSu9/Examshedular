@@ -20,6 +20,20 @@ const RANKS = [
 ];
 
 // NAVIGATION
+function switchView(view) {
+    document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+
+    document.getElementById(`view-${view}`).classList.add('active');
+    document.getElementById(`nav-${view}`).classList.add('active');
+
+    // Special logic for Dashboard
+    if (view === 'dashboard' && currentSchedule) {
+        renderBlueprint(currentSchedule);
+    }
+}
+
+// STEP NAVIGATION
 function navigateTo(step) {
     document.querySelectorAll('.step-container').forEach(el => el.classList.remove('active'));
     document.getElementById(`step-${step}`).classList.add('active');
@@ -41,9 +55,10 @@ async function initWizard() {
         if (currentSchedule) {
             console.log("Loading persisted schedule...");
             renderBlueprint(currentSchedule);
-            navigateTo(4);
+            switchView('dashboard');
         } else {
             populateDropdown('select-university', Object.keys(db));
+            switchView('home');
         }
     } catch (e) {
         console.error("Sync Failed", e);
@@ -152,7 +167,7 @@ async function generateSchedule() {
         localStorage.setItem('padsala_wizard_inputs', JSON.stringify(inputs));
 
         renderBlueprint(data);
-        navigateTo(4);
+        switchView('dashboard');
     } catch (e) { alert("Compute Error"); }
 }
 
@@ -165,7 +180,10 @@ function resetPlan() {
 }
 
 function renderBlueprint(data) {
-    const container = document.getElementById('blueprint-content');
+    // Both containers
+    const dashContainer = document.getElementById('blueprint-content');
+    const homeContainer = document.getElementById('home-blueprint-content');
+
     let html = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
             <h2>Master Timeline</h2>
@@ -201,7 +219,8 @@ function renderBlueprint(data) {
         </div>`;
     });
     html += `</div>`;
-    container.innerHTML = html;
+    dashContainer.innerHTML = html;
+    if (homeContainer) homeContainer.innerHTML = html;
     lucide.createIcons();
 }
 
