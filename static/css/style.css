@@ -214,9 +214,13 @@ body {
     flex: 1;
     display: grid;
     grid-template-columns: 1fr 350px;
-    gap: 1rem;
-    padding: 1rem 3rem;
-    overflow: hidden;
+    gap: 2rem;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    overflow-y: auto;
+    /* allow vertical scroll if screen height is low */
 }
 
 /* Left: Timer Sector */
@@ -226,6 +230,7 @@ body {
     align-items: center;
     justify-content: center;
     position: relative;
+    padding: 1rem;
 }
 
 .glow-ring-container {
@@ -233,21 +238,24 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    max-width: 450px;
 }
 
 .progress-ring {
-    width: 350px;
-    height: 350px;
+    width: 100%;
+    height: auto;
+    max-width: 450px;
     transform: rotate(-90deg);
     filter: drop-shadow(0 0 20px var(--primary));
 }
 
 .timer-text {
     position: absolute;
-    font-size: 5rem;
+    font-size: min(15vw, 6rem);
     font-weight: 800;
     font-family: var(--font-heading);
-    letter-spacing: -4px;
+    letter-spacing: -2px;
     text-shadow: 0 0 40px rgba(255, 255, 255, 0.3);
 }
 
@@ -715,6 +723,23 @@ input[type="range"]::-webkit-slider-thumb {
     box-shadow: 0 0 10px var(--accent-pink);
 }
 
+@media (max-width: 1024px) {
+    .focus-container {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .focus-sidebar {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .focus-sidebar>div {
+        flex: 1;
+        min-width: 300px;
+    }
+}
+
 @media (max-width: 768px) {
     .app-shell {
         padding: 1rem;
@@ -773,37 +798,43 @@ input[type="range"]::-webkit-slider-thumb {
         grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
     }
 
-    /* Focus Mode Overlay */
+    /* Focus Mode Overlay Stack */
     .focus-container {
-        grid-template-columns: 1fr;
-        padding: 1rem;
+        padding: 1.5rem;
+        display: block;
         overflow-y: auto;
-        display: flex;
-        flex-direction: column;
     }
 
     .focus-sidebar {
+        flex-direction: column;
+        margin-bottom: 8rem;
+    }
+
+    .focus-sidebar>div {
         width: 100%;
-        order: 2;
-        margin-bottom: 6rem;
-        /* Space for music bar */
+        margin-bottom: 1.5rem;
     }
 
     .timer-sector {
-        order: 1;
-        margin-bottom: 2rem;
+        margin-bottom: 3rem;
+        min-height: auto;
     }
 
-    .progress-ring {
-        width: 280px;
-        height: 280px;
+    .glow-ring-container {
+        max-width: 300px;
+        margin: 0 auto;
     }
 
     .timer-text {
-        font-size: 3.5rem;
+        font-size: min(18vw, 4rem);
     }
 
     .music-bar {
-        padding: 0 1rem 1.5rem 1rem;
+        padding: 1rem;
+        height: auto;
+    }
+
+    .player-controls {
+        gap: 1.5rem;
     }
 }
