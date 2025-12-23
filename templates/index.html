@@ -375,6 +375,25 @@
             </div>
         </div>
 
+        <div id="neural-modal" class="modal-overlay">
+            <div class="glass-card" style="max-width: 500px; padding: 3rem; text-align: center;">
+                <div class="glow-icon"
+                    style="margin: 0 auto 1.5rem; width: 60px; height: 60px; background: #22c55e; border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(34, 197, 94, 0.4);">
+                    <i data-lucide="brain-circuit" style="color: white; width: 30px; height: 30px;"></i>
+                </div>
+                <h2 style="margin-bottom: 0.5rem;">Neural Encoding</h2>
+                <p style="opacity: 0.6; margin-bottom: 2rem;">Active Recall: Summarize your deep work session to lock it
+                    into long-term memory.</p>
+                <textarea id="neural-input" class="stream-input"
+                    style="width: 100%; height: 120px; margin-bottom: 2rem; resize: none;"
+                    placeholder="What did you master today?"></textarea>
+                <button class="btn-primary" onclick="submitNeural()" style="width: 100%; justify-content: center;">
+                    Lock Session <i data-lucide="shield-check"></i>
+                </button>
+            </div>
+        </div>
+        <div id="snow-container"></div>
+
         <script src="{{ url_for('static', filename='js/main.js') }}"></script>
         <script>lucide.createIcons();</script>
 </body>

@@ -399,12 +399,29 @@ function toggleTimer() {
 function finishSession() {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = null;
+
+    // Trigger Neural Encoding Modal
+    document.getElementById('neural-modal').classList.add('active');
+}
+
+function submitNeural() {
+    const reflection = document.getElementById('neural-input').value;
+    if (!reflection || reflection.length < 5) return alert("Please encode your session details (min 5 characters).");
+
     focusXP += 20;
     concentrationStreak++;
+
+    // PERSIST
     localStorage.setItem('padsala_xp', focusXP);
     localStorage.setItem('padsala_streak', concentrationStreak);
-    alert("Session Complete +20 XP");
+
+    // Close Modals
+    document.getElementById('neural-modal').classList.remove('active');
+    document.getElementById('neural-input').value = ""; // Clear for next time
+
+    alert("Session Neural-Encoded! +20 XP Gained.");
     exitFocus();
+    updateStatsUI();
 }
 
 function exitFocus() {
@@ -574,4 +591,34 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/static/sw.js');
 }
 
-window.onload = initWizard;
+// ATMOSPHERIC SNOW SYSTEM
+function initSnow() {
+    const container = document.getElementById('snow-container');
+    if (!container) return;
+
+    const count = 40;
+    for (let i = 0; i < count; i++) {
+        const snow = document.createElement('div');
+        snow.className = 'snow-particle';
+
+        const size = Math.random() * 4 + 2;
+        const left = Math.random() * 100;
+        const delay = Math.random() * 10;
+        const duration = Math.random() * 15 + 10;
+
+        snow.style.width = `${size}px`;
+        snow.style.height = `${size}px`;
+        snow.style.left = `${left}%`;
+        snow.style.top = `-20px`;
+        snow.style.animationDelay = `${delay}s`;
+        snow.style.animationDuration = `${duration}s`;
+
+        container.appendChild(snow);
+    }
+}
+
+// BOOT ENGINE
+window.onload = () => {
+    initWizard();
+    initSnow();
+};
