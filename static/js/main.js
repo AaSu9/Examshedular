@@ -37,6 +37,17 @@ function switchView(view) {
 }
 
 // STEP NAVIGATION
+function initiateNewProtocol() {
+    selectedSubjects = [];
+    document.getElementById('schedule-name').value = "";
+    document.getElementById('subject-selection-zone').style.display = 'none';
+
+    // Repopulate base dropdown
+    populateDropdown('select-university', Object.keys(db));
+
+    navigateTo(2);
+}
+
 function navigateTo(step) {
     document.querySelectorAll('.step-container').forEach(el => el.classList.remove('active'));
     document.getElementById(`step-${step}`).classList.add('active');
@@ -63,6 +74,9 @@ async function initWizard() {
         const res = await fetch('/api/metadata');
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         db = await res.json();
+
+        // Always ensure dropdowns are ready for a new plan
+        populateDropdown('select-university', Object.keys(db));
 
         // Initial View Determination
         if (savedSchedules.length > 0) {
