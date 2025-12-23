@@ -105,7 +105,13 @@ def get_micro_plan(subject_name, focus_area, daily_hours, session_mins, break_mi
             
     return plan
 
-def generate_study_plan(exams_list, daily_study_hours=8, session_mins=90, break_mins=15, start_time="06:00"):
+def generate_study_plan(exams_list, daily_study_hours=8, session_mins=90, break_mins=15, start_time="06:00", topic_mastery_map=None):
+    """
+    v17 Adaptive Planner:
+    - Factors in 'topic_mastery_map' { 'Subject': { 'Topic': score } }
+    - Mastery < 40 increases repetition frequency.
+    - Consistency adjustments based on predicted cognitive load.
+    """
     prepared_exams = []
     for ex in exams_list:
         try:
@@ -114,7 +120,7 @@ def generate_study_plan(exams_list, daily_study_hours=8, session_mins=90, break_
                 **ex,
                 'ad_date': ad_date,
                 'chapters': ex.get('chapters', []),
-                'difficulty': int(ex.get('difficulty', 2)) # 1: Easy, 2: Med, 3: Hard
+                'difficulty': int(ex.get('difficulty', 2))
             })
         except:
             continue
@@ -142,50 +148,76 @@ def generate_study_plan(exams_list, daily_study_hours=8, session_mins=90, break_
                 "bs_date": ad_to_bs(date),
                 "is_exam_day": True,
                 "subject": ex['name'],
-                "tasks": get_micro_plan(ex['name'], "", daily_study_hours, session_mins, break_mins, is_exam=True, start_time_str=start_time)
+                "tasks": get_micro_plan(ex['name'], "EXAM PREP", daily_study_hours, session_mins, break_mins, is_exam=True, start_time_str=start_time)
             })
             continue
 
-        # Priority Logic: Higher difficulty subjects get slightly more weight as exams approach
-        next_exam = None
-        for ex in prepared_exams:
-            if ex['ad_date'] > date:
-                next_exam = ex
-                break
+        next_exam = next((ex for ex in prepared_exams if ex['ad_date'] > date), None)
         if not next_exam: continue
 
-        days_until = (next_exam['ad_date'] - date).days
-        study_sub = next_exam if days_until <= 5 else None
+        # v17 ADAPTIVE PRIORITY ENGINE
+        candidates = []
+        for ex in prepared_exams:
+            days_left = (ex['ad_date'] - date).days
+            if days_left <= 0: continue
+            
+            # 1. Base proximity weight
+            proximity = 100 / (days_left + 0.5)
+            
+            # 2. Difficulty weight
+            diff_weight = 1 + (ex['difficulty'] * 0.3)
+            
+            # 3. Mastery weight (v17)
+            # Higher weight if mastery is low. 
+            avg_mastery = 50 
+            if topic_mastery_map and ex['name'] in topic_mastery_map:
+                scores = list(topic_mastery_map[ex['name']].values())
+                if scores: avg_mastery = sum(scores) / len(scores)
+            
+            mastery_multiplier = 1.0 + ((100 - avg_mastery) / 100.0) 
+            
+            # 4. Burnout balancing (Reduction if subject was studied 3 days in a row)
+            repetition_penalty = 1.0
+            if subject_day_count[ex['name']] > 0:
+                repetition_penalty = 1.0 / (subject_day_count[ex['name']] * 0.5 + 1)
+
+            score = proximity * diff_weight * mastery_multiplier * repetition_penalty
+            candidates.append({"ex": ex, "score": score})
         
-        if not study_sub:
-            candidates = []
-            for ex in prepared_exams:
-                days_left = (ex['ad_date'] - date).days
-                if days_left <= 0: continue
-                # Bias towards harder subjects and closer exams
-                diff_weight = 1 + (ex['difficulty'] * 0.2)
-                score = (100 / (days_left + 0.5)) * (1.0 / (subject_day_count[ex['name']] + 1)) * diff_weight
-                candidates.append({"ex": ex, "score": score})
-            candidates.sort(key=lambda x: x['score'], reverse=True)
-            study_sub = candidates[0]['ex']
-
+        candidates.sort(key=lambda x: x['score'], reverse=True)
+        study_sub = candidates[0]['ex']
         subject_day_count[study_sub['name']] += 1
-        chaps = study_sub['chapters']
-        focus_area = chaps[chapter_idx_map[study_sub['name']] % len(chaps)] if chaps else "Core Revision"
-        chapter_idx_map[study_sub['name']] += 1
 
-        # Adjust hours slightly based on difficulty (cap at 12)
+        # Topic Selection based on Mastery (Prioritize weak topics)
+        chaps = study_sub['chapters']
+        weak_topic = None
+        if topic_mastery_map and study_sub['name'] in topic_mastery_map:
+            # Find topic with lowest mastery
+            sorted_topics = sorted(topic_mastery_map[study_sub['name']].items(), key=lambda x: x[1])
+            if sorted_topics: weak_topic = sorted_topics[0][0]
+
+        if weak_topic:
+            focus_area = weak_topic
+        else:
+            focus_area = chaps[chapter_idx_map[study_sub['name']] % len(chaps)] if chaps else "Core Systems"
+            chapter_idx_map[study_sub['name']] += 1
+
+        # Burnout Prevention Check (Scaling hours based on cumulative fatigue)
+        daily_ceiling = 12
+        load_factor = sum(subject_day_count.values()) / (i + 1) # Avg study intensity
         adjusted_hours = daily_study_hours
-        if study_sub['difficulty'] == 3: adjusted_hours = min(12, daily_study_hours + 1)
-        elif study_sub['difficulty'] == 1: adjusted_hours = max(4, daily_study_hours - 1)
+        if load_factor > 0.8: # Sustained high pressure
+            adjusted_hours = max(4, daily_study_hours - 1)
+        
+        if study_sub['difficulty'] == 3: adjusted_hours = min(daily_ceiling, adjusted_hours + 1)
 
         final_days.append({
             "id": f"day-{i}",
             "bs_date": ad_to_bs(date),
             "is_exam_day": False,
             "subject": study_sub['name'],
-            "daily_focus": f"Focus: {focus_area}",
-            "difficulty": study_sub['difficulty'],
+            "daily_focus": focus_area,
+            "mastery_focus": True if weak_topic else False,
             "tasks": get_micro_plan(study_sub['name'], focus_area, adjusted_hours, session_mins, break_mins, start_time_str=start_time)
         })
         

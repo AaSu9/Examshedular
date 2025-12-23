@@ -173,6 +173,40 @@ def init_db():
         FOREIGN KEY(user_id) REFERENCES users(id)
     )''')
 
+    # v17: COGNITIVE DATA TABLES
+    cursor.execute('''CREATE TABLE IF NOT EXISTS topic_mastery (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        subject TEXT,
+        topic TEXT,
+        mastery_score INTEGER DEFAULT 0,
+        last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )''')
+
+    cursor.execute('''CREATE TABLE IF NOT EXISTS session_stats (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        subject TEXT,
+        topic TEXT,
+        duration_mins INTEGER,
+        focus_score INTEGER,
+        distraction_count INTEGER,
+        idle_seconds INTEGER,
+        abandoned BOOLEAN DEFAULT 0,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )''')
+
+    cursor.execute('''CREATE TABLE IF NOT EXISTS user_metrics (
+        user_id INTEGER PRIMARY KEY,
+        total_xp INTEGER DEFAULT 0,
+        streak INTEGER DEFAULT 0,
+        peak_study_hour INTEGER,
+        burnout_risk TEXT DEFAULT 'LOW',
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )''')
+
     # Seed data
     for uni_name, faculties in SYLLABUS_DATA.items():
         cursor.execute('INSERT INTO universities (name) VALUES (?)', (uni_name,))

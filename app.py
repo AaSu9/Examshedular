@@ -167,16 +167,30 @@ def generate_schedule():
         
         if not exams:
             return jsonify({"error": "No exams provided"}), 400
+
+        # v17: Fetch Topic Mastery for Adaptive Planning
+        topic_mastery_map = {}
+        if 'user_id' in session:
+            conn = get_db_connection()
+            mastery_data = conn.execute('SELECT subject, topic, mastery_score FROM topic_mastery WHERE user_id = ?', (session['user_id'],)).fetchall()
+            conn.close()
+            for m in mastery_data:
+                if m['subject'] not in topic_mastery_map:
+                    topic_mastery_map[m['subject']] = {}
+                topic_mastery_map[m['subject']][m['topic']] = m['mastery_score']
         
         schedule = generate_study_plan(
             exams, 
             daily_study_hours=total_hours,
             session_mins=session_mins,
             break_mins=break_mins,
-            start_time=start_time
+            start_time=start_time,
+            topic_mastery_map=topic_mastery_map
         )
         return jsonify(schedule)
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/replan-day', methods=['POST'])
@@ -256,6 +270,76 @@ def admin_delete_user():
     conn.commit()
     conn.close()
     return jsonify({"success": True})
+
+@app.route('/api/v17/log-session', methods=['POST'])
+def log_session_v17():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.json
+    uid = session['user_id']
+    sub = data.get('subject')
+    topic = data.get('topic')
+    score = data.get('focus_score', 100)
+    
+    conn = get_db_connection()
+    # 1. Log session stats
+    conn.execute('''
+        INSERT INTO session_stats (user_id, subject, topic, duration_mins, focus_score, distraction_count, idle_seconds)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (uid, sub, topic, data.get('duration_mins'), score, data.get('distractions'), data.get('idle_seconds')))
+    
+    # 2. Update Mastery (Simple linear growth based on focus score)
+    # If focus score is high, mastery increases faster.
+    mastery_gain = 5 if score > 80 else (2 if score > 50 else 0)
+    
+    # Check if topic exists
+    existing = conn.execute('SELECT mastery_score FROM topic_mastery WHERE user_id = ? AND subject = ? AND topic = ?', (uid, sub, topic)).fetchone()
+    
+    if existing:
+        new_mastery = min(100, existing[0] + mastery_gain)
+        conn.execute('UPDATE topic_mastery SET mastery_score = ?, last_updated = CURRENT_TIMESTAMP WHERE user_id = ? AND subject = ? AND topic = ?', 
+                     (new_mastery, uid, sub, topic))
+    else:
+        conn.execute('INSERT INTO topic_mastery (user_id, subject, topic, mastery_score) VALUES (?, ?, ?, ?)', 
+                     (uid, sub, topic, mastery_gain))
+    
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True, "mastery_gain": mastery_gain})
+
+@app.route('/api/v17/analytics', methods=['GET'])
+def get_analytics_v17():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    uid = session['user_id']
+    conn = get_db_connection()
+    
+    # 1. Focus Score Avg
+    focus_data = conn.execute('SELECT AVG(focus_score) FROM session_stats WHERE user_id = ?', (uid,)).fetchone()
+    avg_focus = focus_data[0] if focus_data[0] else 0
+    
+    # 2. Burnout Risk (Based on session count in last 7 days)
+    recent_count = conn.execute('SELECT COUNT(*) FROM session_stats WHERE user_id = ? AND timestamp > datetime("now", "-7 days")', (uid,)).fetchone()[0]
+    burnout = "LOW"
+    if recent_count > 20: burnout = "HIGH"
+    elif recent_count > 12: burnout = "MED"
+    
+    # 3. Mastery Map
+    mastery_rows = conn.execute('SELECT subject, topic, mastery_score FROM topic_mastery WHERE user_id = ?', (uid,)).fetchall()
+    mastery_map = {}
+    for r in mastery_rows:
+        if r['subject'] not in mastery_map:
+            mastery_map[r['subject']] = {}
+        mastery_map[r['subject']][r['topic']] = r['mastery_score']
+        
+    conn.close()
+    return jsonify({
+        "avg_focus": avg_focus,
+        "burnout_risk": burnout,
+        "mastery": mastery_map
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

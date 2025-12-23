@@ -348,15 +348,52 @@ async function editDayHours(dayIdx) {
     openAdjustModal(dayIdx);
 }
 
-// FOCUS GALAXY LOGIC
+// v17: COGNITIVE BIOMETRICS & HARD FOCUS
+let focusBiometrics = {
+    distractions: 0,
+    idleSeconds: 0,
+    tabSwitches: 0,
+    lastActive: Date.now()
+};
+
+function initBiometrics() {
+    focusBiometrics = { distractions: 0, idleSeconds: 0, tabSwitches: 0, lastActive: Date.now() };
+
+    // Tab Visibility Tracking
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && timerInterval) {
+            focusBiometrics.tabSwitches++;
+            triggerFocusWarning("Commander, your focus is drifting! Return to the bridge.");
+        }
+    });
+
+    // Idle Detection
+    window.onmousemove = window.onkeypress = () => {
+        focusBiometrics.lastActive = Date.now();
+    };
+}
+
+function triggerFocusWarning(msg) {
+    const overlay = document.getElementById('focus-mode');
+    overlay.style.boxShadow = 'inset 0 0 100px rgba(239, 68, 68, 0.3)';
+    setTimeout(() => overlay.style.boxShadow = 'none', 1000);
+}
+
+// FOCUS GALAXY LOGIC v17
 function enterFocus(sub, task, minutes = 90) {
     document.getElementById('focus-mode').style.display = 'flex';
     document.getElementById('focus-title').innerText = sub;
     document.getElementById('focus-task').innerText = task;
 
+    // v17: Fullscreen enforcement
+    if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => { });
+    }
+
     secondsRemaining = minutes * 60;
     totalSecondsInSession = secondsRemaining;
 
+    initBiometrics();
     updateTimerUI();
     updateStatsUI();
 }
@@ -376,21 +413,24 @@ function toggleTimer() {
     if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;
-        btn.innerHTML = `<i data-lucide="play"></i> Start`;
+        btn.innerHTML = `<i data-lucide="play"></i> Resume`;
         document.getElementById('bar-play-icon').setAttribute('data-lucide', 'play');
     } else {
         timerInterval = setInterval(() => {
             if (secondsRemaining > 0) {
                 secondsRemaining--;
+                // Track Idle Time
+                if (Date.now() - focusBiometrics.lastActive > 30000) {
+                    focusBiometrics.idleSeconds++;
+                }
                 updateTimerUI();
             } else {
                 finishSession();
             }
         }, 1000);
-        btn.innerHTML = `<i data-lucide="pause"></i> Pause`;
+        btn.innerHTML = `<i data-lucide="pause"></i> Focus Active`;
         document.getElementById('bar-play-icon').setAttribute('data-lucide', 'pause');
 
-        // Auto-play music if input has value
         if (document.getElementById('yt-input').value) loadYT();
     }
     lucide.createIcons();
@@ -400,15 +440,43 @@ function finishSession() {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = null;
 
+    // Calculate Focus Score (v17)
+    const factor = (focusBiometrics.tabSwitches * 10) + (focusBiometrics.idleSeconds / 10);
+    const score = Math.max(0, 100 - factor);
+    window.lastFocusScore = score;
+
     // Trigger Neural Encoding Modal
     document.getElementById('neural-modal').classList.add('active');
 }
 
-function submitNeural() {
+async function submitNeural() {
     const reflection = document.getElementById('neural-input').value;
     if (!reflection || reflection.length < 5) return alert("Please encode your session details (min 5 characters).");
 
-    focusXP += 20;
+    const score = window.lastFocusScore || 100;
+    const sub = document.getElementById('focus-title').innerText;
+    const task = document.getElementById('focus-task').innerText;
+
+    // v17: Save Biometrics to Server
+    if (isLoggedIn) {
+        try {
+            await fetch('/api/v17/log-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    subject: sub,
+                    topic: task,
+                    duration_mins: Math.round(totalSecondsInSession / 60),
+                    focus_score: score,
+                    distractions: focusBiometrics.tabSwitches,
+                    idle_seconds: focusBiometrics.idleSeconds,
+                    reflection: reflection
+                })
+            });
+        } catch (e) { }
+    }
+
+    focusXP += Math.round(20 * (score / 100));
     concentrationStreak++;
 
     // PERSIST
@@ -419,7 +487,7 @@ function submitNeural() {
     document.getElementById('neural-modal').classList.remove('active');
     document.getElementById('neural-input').value = ""; // Clear for next time
 
-    alert("Session Neural-Encoded! +20 XP Gained.");
+    alert(`Session Neural-Encoded! Focus Score: ${Math.round(score)}%`);
     exitFocus();
     updateStatsUI();
 }
@@ -437,14 +505,14 @@ function updateStatsUI() {
     document.getElementById('stat-rank').innerText = rank;
 }
 
-// YOUTUBE STREAM
+// YOUTUBE STREAM v17 (Distraction-Free)
 function loadYT() {
     const q = document.getElementById('yt-input').value;
     if (!q) return;
 
     let url = q.includes('http')
-        ? `https://www.youtube.com/embed/${q.split('v=')[1]?.split('&')[0] || q.split('/').pop()}?autoplay=1`
-        : `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(q)}`;
+        ? `https://www.youtube.com/embed/${q.split('v=')[1]?.split('&')[0] || q.split('/').pop()}?autoplay=1&rel=0&modestbranding=1`
+        : `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(q + " lecture")}&rel=0&modestbranding=1&autoplay=1`;
 
     document.getElementById('yt-frame').innerHTML = `<iframe width="100%" height="100%" src="${url}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
 }
@@ -614,6 +682,58 @@ function initSnow() {
         snow.style.animationDuration = `${duration}s`;
 
         container.appendChild(snow);
+    }
+}
+
+const originalSwitchView = switchView;
+switchView = (viewId) => {
+    originalSwitchView(viewId);
+    if (viewId === 'analytics') fetchMirrorData();
+};
+
+async function fetchMirrorData() {
+    if (!isLoggedIn) return;
+    try {
+        const res = await fetch('/api/v17/analytics');
+        const data = await res.json();
+
+        // Populate Stats
+        document.getElementById('mirror-focus-score').innerText = `${Math.round(data.avg_focus)}%`;
+        document.getElementById('mirror-burnout').innerText = data.burnout_risk;
+        document.getElementById('mirror-burnout').style.color =
+            data.burnout_risk === 'HIGH' ? '#ef4444' : (data.burnout_risk === 'MED' ? '#fbbf24' : '#22c55e');
+
+        // Populate Mastery Grid
+        const grid = document.getElementById('mastery-grid');
+        grid.innerHTML = "";
+
+        for (const [sub, topics] of Object.entries(data.mastery)) {
+            const subTitle = document.createElement('div');
+            subTitle.className = 'focus-card-header';
+            subTitle.style.marginBottom = '0.5rem';
+            subTitle.innerText = sub.toUpperCase();
+            grid.appendChild(subTitle);
+
+            for (const [topic, score] of Object.entries(topics)) {
+                const row = document.createElement('div');
+                row.style.marginBottom = '1rem';
+                row.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom: 5px;">
+                        <span>${topic}</span>
+                        <span>${score}%</span>
+                    </div>
+                    <div style="height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden;">
+                        <div style="width:${score}%; height:100%; background:linear-gradient(90deg, #8b5cf6, #d946ef); box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);"></div>
+                    </div>
+                `;
+                grid.appendChild(row);
+            }
+        }
+        if (Object.keys(data.mastery).length === 0) {
+            grid.innerHTML = `<div style="text-align:center; opacity:0.5; padding: 2rem;">No cognitive data recorded. Start a Vault session.</div>`;
+        }
+    } catch (e) {
+        console.error("Mirror sync failure", e);
     }
 }
 
