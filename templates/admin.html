@@ -116,11 +116,13 @@
                         </span>
                     </td>
                     <td style="text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
-                        <button class="control-btn" onclick="resetPassword({{ user.id }}, '@{{ user.username }}')"
+                        <button class="control-btn" data-id="{{ user.id }}" data-username="@{{ user.username }}"
+                            onclick="handleReset(this)"
                             style="border-color: rgba(255,255,255,0.1); padding: 6px 12px; font-size: 0.8rem;">
                             <i data-lucide="key" style="width: 14px;"></i> Reset
                         </button>
-                        <button class="control-btn" onclick="deleteUser({{ user.id }}, '@{{ user.username }}')"
+                        <button class="control-btn" data-id="{{ user.id }}" data-username="@{{ user.username }}"
+                            onclick="handleWipe(this)"
                             style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2); padding: 6px 12px; font-size: 0.8rem;">
                             <i data-lucide="trash-2" style="width: 14px;"></i> Wipe
                         </button>
@@ -134,7 +136,9 @@
     <script>
         lucide.createIcons();
 
-        async function resetPassword(id, name) {
+        async function handleReset(btn) {
+            const id = btn.dataset.id;
+            const name = btn.dataset.username;
             const newPass = prompt(`Enter new Access Key for recruit ${name}:`);
             if (!newPass) return;
 
@@ -174,7 +178,9 @@
             } catch (e) { alert("Deployment connection failure."); }
         }
 
-        async function deleteUser(id, name) {
+        async function handleWipe(btn) {
+            const id = btn.dataset.id;
+            const name = btn.dataset.username;
             if (!confirm(`WARNING: You are about to wipe all data for recruit ${name}. This action is permanent and will delete all their timelines. Proceed?`)) return;
 
             try {
