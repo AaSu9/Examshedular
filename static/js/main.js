@@ -440,6 +440,16 @@ function finishSession() {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = null;
 
+    // v17: Audio Notification & Flow Exit
+    try {
+        const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+        audio.play();
+    } catch (e) { }
+
+    if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => { });
+    }
+
     // Calculate Focus Score (v17)
     const factor = (focusBiometrics.tabSwitches * 10) + (focusBiometrics.idleSeconds / 10);
     const score = Math.max(0, 100 - factor);
