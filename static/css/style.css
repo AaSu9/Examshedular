@@ -97,9 +97,52 @@ body {
 
 .app-nav {
     display: flex;
-    gap: 1.5rem;
+    gap: 1rem;
     flex: 1;
     justify-content: center;
+}
+
+#timeline-gallery {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    overflow-x: auto;
+    padding: 0.5rem 0.2rem 1.5rem 0.2rem;
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+#timeline-gallery::-webkit-scrollbar {
+    display: none;
+    /* Chrome/Safari */
+}
+
+.gallery-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-weight: 500;
+}
+
+.gallery-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+    color: var(--text-main);
+}
+
+.gallery-item.active {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(217, 70, 239, 0.2));
+    border-color: var(--primary);
+    color: var(--text-main);
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
 }
 
 .nav-link {

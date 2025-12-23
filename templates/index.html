@@ -55,18 +55,23 @@
             <!-- 1. WELCOME -->
             <div id="step-1" class="step-container active">
                 <div style="text-align: center; padding: 4rem 0;">
-                    <h1 class="hero-title animate-in">Focus Beyond <br>Limits.</h1>
-                    <p style="font-size: 1.25rem; color: #94a3b8; max-width: 600px; margin: 0 auto 3rem;">Enter a state
-                        of
-                        deep flow with the galaxy's most advanced study engine.</p>
-                    <button class="btn-primary animate-in" onclick="navigateTo(2)">
-                        Initialize Protocol <i data-lucide="arrow-right"></i>
+                    <div class="glow-icon"
+                        style="margin: 0 auto 2rem; width: 80px; height: 80px; background: var(--primary); border-radius: 24px; display: flex; align-items: center; justify-content: center; box-shadow: var(--neon-shadow);">
+                        <i data-lucide="sparkles" style="width: 40px; height: 40px; color: white;"></i>
+                    </div>
+                    <h1 class="text-gradient" style="font-size: 3.5rem; margin-bottom: 1rem;">Protocol: Alpha</h1>
+                    <p style="font-size: 1.2rem; color: #94a3b8; max-width: 600px; margin: 0 auto 3rem;">
+                        Command your academic journey. Generate multi-layered timelines for Regular and Back exams with
+                        zero distortion.
+                    </p>
+                    <button class="btn-primary" onclick="navigateTo(2)"
+                        style="font-size: 1.1rem; padding: 1.2rem 3rem;">
+                        Initiate Setup <i data-lucide="command"></i>
                     </button>
-                    <br><br>
-                    <div style="opacity: 0.5;">
-                        <button class="control-btn" onclick="enterFocus('Galaxy Simulation', 'System Test', 25)">
-                            <i data-lucide="rocket"></i> Launch Focus Demo
-                        </button>
+
+                    <div id="home-welcome-user"
+                        style="margin-top: 2rem; font-weight: 600; color: var(--primary); display: none;">
+                        Welcome back, <span id="welcome-username">user</span>.
                     </div>
                 </div>
             </div>
@@ -305,14 +310,14 @@
 
                 <div id="login-form">
                     <div style="margin-bottom: 1.5rem;">
-                        <label>Username</label>
+                        <label><i data-lucide="user" style="width: 14px;"></i> Username</label>
                         <input type="text" id="login-username" class="stream-input"
-                            style="width: 100%; margin-top: 0.5rem;">
+                            style="width: 100%; margin-top: 0.5rem;" placeholder="Mission ID">
                     </div>
                     <div style="margin-bottom: 2rem;">
-                        <label>Access Key (Password)</label>
+                        <label><i data-lucide="key" style="width: 14px;"></i> Access Key</label>
                         <input type="password" id="login-password" class="stream-input"
-                            style="width: 100%; margin-top: 0.5rem;">
+                            style="width: 100%; margin-top: 0.5rem;" placeholder="••••••••">
                     </div>
                     <button class="btn-primary" onclick="handleAuth('login')"
                         style="width: 100%; justify-content: center;">Authenticate</button>
@@ -324,17 +329,17 @@
 
                 <div id="register-form" style="display: none;">
                     <div style="margin-bottom: 1.5rem;">
-                        <label>New Username</label>
+                        <label><i data-lucide="user-plus" style="width: 14px;"></i> New Username</label>
                         <input type="text" id="reg-username" class="stream-input"
-                            style="width: 100%; margin-top: 0.5rem;">
+                            style="width: 100%; margin-top: 0.5rem;" placeholder="Pick a Profile Name">
                     </div>
                     <div style="margin-bottom: 2rem;">
-                        <label>New Access Key</label>
+                        <label><i data-lucide="lock" style="width: 14px;"></i> Security Code</label>
                         <input type="password" id="reg-password" class="stream-input"
-                            style="width: 100%; margin-top: 0.5rem;">
+                            style="width: 100%; margin-top: 0.5rem;" placeholder="Min 6 characters">
                     </div>
                     <button class="btn-primary" onclick="handleAuth('register')"
-                        style="width: 100%; justify-content: center;">Initialize</button>
+                        style="width: 100%; justify-content: center;">Initialize Profile</button>
                     <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; opacity: 0.6;">
                         Have an account? <a href="#" onclick="toggleAuthForm('login')"
                             style="color: var(--primary);">Back to Login</a>

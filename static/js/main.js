@@ -194,20 +194,23 @@ function renderGallery() {
     const gallery = document.getElementById('timeline-gallery');
     if (!gallery) return;
     gallery.innerHTML = savedSchedules.map((s, idx) => `
-        <button class="nav-link ${currentSchedule === s.data ? 'active' : ''}" 
-                onclick="loadTimeline(${idx})" 
-                style="white-space: nowrap; border: 1px solid rgba(255,255,255,0.1)">
+        <div class="gallery-item ${currentSchedule === s.data ? 'active' : ''}" 
+             onclick="loadTimeline(${idx})">
+            <i data-lucide="layout-template" style="width: 14px;"></i>
             ${s.name}
-        </button>
+        </div>
     `).join('');
 
     if (savedSchedules.length < 5) {
         gallery.innerHTML += `
-            <button class="nav-link" onclick="switchView('home')" style="border: 1px dashed var(--primary); color: var(--primary)">
-                + New Timeline
-            </button>
+            <div class="gallery-item" onclick="switchView('home')" 
+                 style="border: 1px dashed var(--primary); color: var(--primary); opacity: 0.8;">
+                <i data-lucide="plus-circle" style="width: 14px;"></i>
+                New Plan
+            </div>
         `;
     }
+    lucide.createIcons();
 }
 
 function loadTimeline(idx) {
@@ -467,6 +470,9 @@ async function handleAuth(type) {
 
 function updateAuthUI() {
     const statusEl = document.getElementById('auth-status');
+    const homeWelcome = document.getElementById('home-welcome-user');
+    const welcomeUser = document.getElementById('welcome-username');
+
     if (isLoggedIn) {
         statusEl.innerHTML = `
             <div style="display: flex; align-items: center; gap: 1rem;">
@@ -474,6 +480,10 @@ function updateAuthUI() {
                 <button class="control-btn" style="padding: 4px 8px;" onclick="location.href='/api/auth/logout'">Logout</button>
             </div>
         `;
+        if (homeWelcome) {
+            homeWelcome.style.display = 'block';
+            welcomeUser.innerText = currentUsername;
+        }
     }
 }
 
