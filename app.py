@@ -202,9 +202,9 @@ def replan_day():
 
 @app.route('/admin')
 def admin_portal():
-    # Only 'admin' user can access
-    if 'user_id' not in session or session.get('username') != 'admin':
-        return "Access Revoked: Imperial Clearance required.", 403
+    # Only 'Aashish Ghimire' user can access
+    if 'user_id' not in session or session.get('username') != 'Aashish Ghimire':
+        return "Access Revoked: Imperial Clearance required for Commander Aashish.", 403
         
     conn = get_db_connection()
     users = conn.execute('''
