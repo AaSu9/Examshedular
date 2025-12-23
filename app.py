@@ -214,8 +214,30 @@ def admin_portal():
         GROUP BY u.id
         ORDER BY u.created_at DESC
     ''').fetchall()
+    
+    # Global Metrics
+    stats = conn.execute('SELECT COUNT(*) FROM saved_schedules').fetchone()[0]
     conn.close()
-    return render_template('admin.html', users=users)
+    return render_template('admin.html', users=users, total_schedules=stats)
+
+@app.route('/admin/api/reset-password', methods=['POST'])
+def admin_reset_password():
+    if 'user_id' not in session or session.get('username') != 'Aashish Ghimire':
+        return jsonify({"error": "Forbidden"}), 403
+    
+    target_id = request.json.get('user_id')
+    new_password = request.json.get('new_password')
+    if not target_id or not new_password:
+        return jsonify({"error": "Missing parameters"}), 400
+        
+    from werkzeug.security import generate_password_hash
+    hashed = generate_password_hash(new_password)
+    
+    conn = get_db_connection()
+    conn.execute('UPDATE users SET password = ? WHERE id = ?', (hashed, target_id))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
 
 @app.route('/admin/api/delete-user', methods=['POST'])
 def admin_delete_user():

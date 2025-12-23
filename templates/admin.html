@@ -78,8 +78,15 @@
             <div style="height: 80px; width: 1px; background: rgba(255,255,255,0.1);"></div>
             <div style="text-align: center;">
                 <h3 style="margin: 0; opacity: 0.6; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">
-                    Central Status</h3>
-                <div style="color: #22c55e; font-weight: 800; font-size: 1.5rem; margin-top: 1rem;">ONLINE <i
+                    Active Timelines</h3>
+                <div style="font-size: 4rem; font-weight: 900; color: var(--accent-pink); line-height: 1;">{{
+                    total_schedules }}</div>
+            </div>
+            <div style="height: 80px; width: 1px; background: rgba(255,255,255,0.1);"></div>
+            <div style="text-align: center;">
+                <h3 style="margin: 0; opacity: 0.6; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">
+                    System Status</h3>
+                <div style="color: #22c55e; font-weight: 800; font-size: 1.2rem; margin-top: 1rem;">ONLINE <i
                         data-lucide="activity"></i></div>
             </div>
         </div>
@@ -94,7 +101,7 @@
                     <th>Mission ID</th>
                     <th>Registry Date</th>
                     <th>Timelines</th>
-                    <th style="text-align: right;">Authorization</th>
+                    <th style="text-align: right;">Operations</th>
                 </tr>
             </thead>
             <tbody>
@@ -108,10 +115,14 @@
                             {{ user.timeline_count }} Active
                         </span>
                     </td>
-                    <td style="text-align: right;">
+                    <td style="text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
+                        <button class="control-btn" onclick="resetPassword({{ user.id }}, '@{{ user.username }}')"
+                            style="border-color: rgba(255,255,255,0.1); padding: 6px 12px; font-size: 0.8rem;">
+                            <i data-lucide="key" style="width: 14px;"></i> Reset
+                        </button>
                         <button class="control-btn" onclick="deleteUser({{ user.id }}, '@{{ user.username }}')"
                             style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2); padding: 6px 12px; font-size: 0.8rem;">
-                            <i data-lucide="trash-2" style="width: 14px; margin-right: 4px;"></i> Wipe Data
+                            <i data-lucide="trash-2" style="width: 14px;"></i> Wipe
                         </button>
                     </td>
                 </tr>
@@ -122,6 +133,25 @@
 
     <script>
         lucide.createIcons();
+
+        async function resetPassword(id, name) {
+            const newPass = prompt(`Enter new Access Key for recruit ${name}:`);
+            if (!newPass) return;
+
+            try {
+                const res = await fetch('/admin/api/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: id, new_password: newPass })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(`Access Key for ${name} has been updated.`);
+                } else {
+                    alert("Authorization failed or link broken.");
+                }
+            } catch (e) { alert("Comm error"); }
+        }
 
         async function generateUser() {
             const username = document.getElementById('new-username').value;
