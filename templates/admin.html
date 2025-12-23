@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Padsala | High Command Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            padding: 4rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            padding: 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .admin-table th {
+            color: var(--primary);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        .stat-card {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid var(--primary);
+            padding: 2rem;
+            border-radius: 16px;
+            margin-bottom: 3rem;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body class="galaxy-bg">
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem;">
+        <div>
+            <h1 class="text-gradient">High Command</h1>
+            <p style="opacity: 0.6;">System Overseer Interface</p>
+        </div>
+        <a href="/" class="control-btn" style="text-decoration: none;">Return to Bridge</a>
+    </header>
+
+    <div class="stat-card">
+        <h3 style="margin: 0; opacity: 0.7;">Total Recruits</h3>
+        <div style="font-size: 3rem; font-weight: 800; color: var(--primary);">{{ users|length }}</div>
+    </div>
+
+    <div class="glass-card" style="padding: 2rem;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Mission ID</th>
+                    <th>Joined (UTC)</th>
+                    <th>Active Timelines</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td style="font-weight: 700;">@{{ user.username }}</td>
+                    <td style="opacity: 0.6;">{{ user.created_at }}</td>
+                    <td>
+                        <span
+                            style="background: rgba(139, 92, 246, 0.2); color: var(--primary); padding: 4px 12px; border-radius: 20px; font-weight: 700;">
+                            {{ user.timeline_count }} Active
+                        </span>
+                    </td>
+                    <td>
+                        <span style="color: #22c55e;">● Online</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>

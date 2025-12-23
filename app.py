@@ -200,5 +200,22 @@ def replan_day():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/admin')
+def admin_portal():
+    # Only 'admin' user can access
+    if 'user_id' not in session or session.get('username') != 'admin':
+        return "Access Revoked: Imperial Clearance required.", 403
+        
+    conn = get_db_connection()
+    users = conn.execute('''
+        SELECT u.id, u.username, u.created_at, COUNT(s.id) as timeline_count 
+        FROM users u 
+        LEFT JOIN saved_schedules s ON u.id = s.user_id 
+        GROUP BY u.id
+        ORDER BY u.created_at DESC
+    ''').fetchall()
+    conn.close()
+    return render_template('admin.html', users=users)
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
