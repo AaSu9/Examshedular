@@ -3,131 +3,44 @@ import json
 
 # The existing database structure
 SYLLABUS_DATA = {
-    "Tribhuvan University (TU)": {
-        "Science & Technology": {
-            "B.Sc. CSIT": {
-                "1st Sem": {
-                    "Introduction to IT": ["IT Fundamentals", "Hardware & Software", "Input/Output", "Data Storage", "Networking"],
-                    "C Programming": ["Tokens & Data Types", "Control Statements", "Functions", "Arrays", "Pointers", "File Handling"],
-                    "Digital Logic": ["Number Systems", "Boolean Algebra", "Logic Gates", "Combinational Circuits", "Sequential Circuits"],
-                    "Mathematics I": ["Set Theory", "Functions & Graphs", "Matrix & Determinants", "Limits", "Derivatives"],
-                    "Physics": ["Mechanics", "Heat & Thermodynamics", "Optics", "Electrostatics"]
-                },
-                "2nd Sem": {
-                    "Discrete Structure": ["Logic & Proofs", "Sets & Functions", "Graph Theory", "Trees", "Combinatorics"],
-                    "Object Oriented Programming": ["Classes & Objects", "Inheritance", "Polymorphism", "Templates"],
-                    "Microprocessor": ["Intel 8085 Architecture", "Instruction Set", "Assembly Language", "Interrupts"],
-                    "Data Structures & Algorithms": ["Linked Lists", "Stacks & Queues", "Trees", "Sorting & Searching"],
-                    "Mathematics II": ["Integration", "Differential Equations", "Vectors", "Complex Numbers"]
-                }
-            },
-            "BIT": {
-                "1st Sem": {
-                    "Introduction to IT": ["IT Basics", "Digital Ethics", "E-governance"],
-                    "Programming Concepts": ["Logic Building", "Syntax", "Variables"],
-                    "Basic Mathematics": ["Calculus", "Linear Algebra"]
-                }
-            },
-            "Engineering (B.E. Computer)": {
-                "1st Year (I)": {
-                    "Applied Mechanics": ["Forces", "Centroid", "Friction"],
-                    "Basic Electrical Eng": ["DC Circuits", "AC Circuits", "Magnetic Circuits"],
-                    "Engineering Physics": ["Wave Motion", "Optics", "Solid State"],
-                    "Eng. Mathematics I": ["Differential Calculus", "Integral Calculus"]
-                }
-            }
-        },
-        "Management": {
-            "BBA": {
-                "1st Sem": {
-                    "Macroeconomics": ["GDP", "Inflation", "Fiscal Policy"],
-                    "English": ["Communication Skills", "Business Letter", "Presentation"],
-                    "Financial Accounting": ["Trial Balance", "Adjustment Entries", "Financial Statements"]
-                }
-            },
-            "BBS": {
-                "1st Year": {
-                    "Business English": ["Business Communication", "Report Writing"],
-                    "Business Statistics": ["Data Representation", "Probability", "Testing"],
-                    "Business Economics": ["Market Mechanism", "Production Theory"]
-                }
-            }
-        }
-    },
-    "Pokhara University (PU)": {
-        "Science & Technology": {
-            "BCIS": {
-                "1st Sem": {
-                    "Introduction to Information System": ["IS Concepts", "E-commerce", "Database Management"],
-                    "Digital Logic": ["Gates", "K-maps", "Registers"]
-                }
-            },
-            "B.E. Software": {
-                "1st Sem": {
-                    "Fundamentals of Engineering": ["Problem Solving", "Ethics"],
-                    "Computer Programming": ["Syntax", "Modular Programming"]
-                }
-            }
-        },
-        "Management": {
-            "BBA": {
-                "1st Sem": {
-                    "Business Communication": ["Formal Letter", "Technical Writing"],
-                    "Principles of Management": ["Planning", "Budgeting", "KPIs"]
-                }
-            }
-        }
-    },
-    "Kathmandu University (KU)": {
-        "Engineering": {
-            "B.E. Computer Engineering": {
-                "1st Year (I)": {
-                    "Physics": ["Quantum Mechanics", "Electromagnetism"],
-                    "Calculus": ["Single Variable Calculus", "Multi-variable Calculus"]
-                }
-            }
-        },
-        "Management": {
-            "BBA": {
-                "1st Sem": {
-                    "Critical Thinking": ["Logic Analysis", "Argumentation"]
-                }
-            }
-        }
-    },
     "Purbanchal University (PoU)": {
         "Engineering": {
+            "B.E. Computer": {
+                "1st Sem": {
+                    "Engineering Mathematics I": ["Calculus", "Linear Algebra", "Complex Numbers"],
+                    "Engineering Physics": ["Optics", "Electrostatics", "Magnetism"],
+                    "Computer Programming (C)": ["Data Types", "Control Structures", "Arrays", "Functions"],
+                    "Basic Electrical Engineering": ["DC Circuits", "AC Circuits", "Transformers"],
+                    "Engineering Drawing I": ["Projections", "Orthographic", "Isometrics"]
+                },
+                "2nd Sem": {
+                    "Engineering Mathematics II": ["Integration", "Differential Equations"],
+                    "Engineering Chemistry": ["Atomic Structure", "Polymers", "Thermodynamics"],
+                    "Object Oriented Programming (C++)": ["Classes", "Inheritance", "Polymorphism"],
+                    "Basic Electronics": ["Semiconductors", "Diodes", "Transistors"],
+                    "Workshop Technology": ["Carpentry", "Foundry", "Welding"]
+                },
+                "3rd Sem": {
+                    "Discrete Structure": ["Logic", "Graph Theory", "Sets"],
+                    "Microprocessor": ["8085", "Architecture", "Assembly"],
+                    "Data Structure & Algorithms": ["Lists", "Stacks", "Trees", "Sorting"],
+                    "Digital Logic": ["Gates", "Combinational", "Sequential"]
+                }
+            },
             "B.E. Civil": {
                 "1st Sem": {
-                    "Drawing": ["Scale", "Projection", "Sectioning"]
+                    "Engineering Drawing I": ["Scale", "Projection", "Sectioning"],
+                    "Applied Mechanics": ["Statics", "Dynamics"],
+                    "Mathematics I": ["Calculus", "Algebra"]
                 }
             }
-        }
-    },
-    "Agriculture & Forestry University (AFU)": {
-        "Agriculture": {
-            "B.Sc. Agriculture": {
+        },
+        "Science & Technology": {
+            "BIT": {
                 "1st Sem": {
-                    "Agronomy": ["Crop Production", "Soil Science Basics"],
-                    "Horticulture": ["Fruit Sciences", "Vegetable Sciences"]
-                }
-            }
-        }
-    },
-    "Mid-Western University (MWU)": {
-        "Humanities": {
-            "BA Social Work": {
-                "1st Sem": {
-                    "Sociology": ["Social Change", "Culture", "Structure"]
-                }
-            }
-        }
-    },
-    "Far-Western University (FWU)": {
-        "Education": {
-            "B.Ed. Computer": {
-                "1st Sem": {
-                    "Instructional Tech": ["E-learning", "Pedagogy"]
+                    "Introduction to IT": ["IT Basics", "Digital Ethics"],
+                    "Programming Concept": ["Logic Building", "Loops"],
+                    "Mathematics": ["Algebra", "Probability"]
                 }
             }
         }
