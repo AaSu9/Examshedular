@@ -16,12 +16,12 @@
         .admin-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 2rem;
+            margin-top: 1rem;
         }
 
         .admin-table th,
         .admin-table td {
-            padding: 1.5rem;
+            padding: 1.2rem;
             text-align: left;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
@@ -29,17 +29,8 @@
         .admin-table th {
             color: var(--primary);
             text-transform: uppercase;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             letter-spacing: 1px;
-        }
-
-        .stat-card {
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid var(--primary);
-            padding: 2rem;
-            border-radius: 16px;
-            margin-bottom: 3rem;
-            display: inline-block;
         }
     </style>
 </head>
@@ -53,34 +44,75 @@
         <a href="/" class="control-btn" style="text-decoration: none;">Return to Bridge</a>
     </header>
 
-    <div class="stat-card">
-        <h3 style="margin: 0; opacity: 0.7;">Total Recruits</h3>
-        <div style="font-size: 3rem; font-weight: 800; color: var(--primary);">{{ users|length }}</div>
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; margin-bottom: 4rem;">
+        <!-- Generate User -->
+        <div class="glass-card" style="padding: 2.5rem;">
+            <h3 style="margin-top: 0; color: var(--primary);">Generate Recruit</h3>
+            <p style="font-size: 0.8rem; opacity: 0.6; margin-bottom: 2rem;">Manually deploy a new student identity to
+                the system.</p>
+
+            <div class="input-group">
+                <input type="text" id="new-username" class="stream-input" placeholder=" " required>
+                <label class="input-label">Username</label>
+            </div>
+
+            <div class="input-group">
+                <input type="password" id="new-password" class="stream-input" placeholder=" " required>
+                <label class="input-label">Access Key</label>
+            </div>
+
+            <button class="btn-primary" onclick="generateUser()" style="width: 100%; justify-content: center;">
+                Deploy Identity <i data-lucide="user-plus"></i>
+            </button>
+        </div>
+
+        <!-- System Stats -->
+        <div class="glass-card"
+            style="padding: 2.5rem; display: flex; align-items: center; justify-content: space-around;">
+            <div style="text-align: center;">
+                <h3 style="margin: 0; opacity: 0.6; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">
+                    Registered Recruits</h3>
+                <div style="font-size: 4rem; font-weight: 900; color: var(--primary); line-height: 1;">{{ users|length
+                    }}</div>
+            </div>
+            <div style="height: 80px; width: 1px; background: rgba(255,255,255,0.1);"></div>
+            <div style="text-align: center;">
+                <h3 style="margin: 0; opacity: 0.6; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">
+                    Central Status</h3>
+                <div style="color: #22c55e; font-weight: 800; font-size: 1.5rem; margin-top: 1rem;">ONLINE <i
+                        data-lucide="activity"></i></div>
+            </div>
+        </div>
     </div>
 
-    <div class="glass-card" style="padding: 2rem;">
+    <!-- User Directory -->
+    <div class="glass-card" style="padding: 2.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 2rem; font-size: 1.5rem; opacity: 0.9;">Recruit Directory</h2>
         <table class="admin-table">
             <thead>
                 <tr>
                     <th>Mission ID</th>
-                    <th>Joined (UTC)</th>
-                    <th>Active Timelines</th>
-                    <th>Status</th>
+                    <th>Registry Date</th>
+                    <th>Timelines</th>
+                    <th style="text-align: right;">Authorization</th>
                 </tr>
             </thead>
             <tbody>
                 {% for user in users %}
-                <tr>
+                <tr id="user-row-{{ user.id }}">
                     <td style="font-weight: 700;">@{{ user.username }}</td>
-                    <td style="opacity: 0.6;">{{ user.created_at }}</td>
+                    <td style="opacity: 0.6; font-size: 0.9rem;">{{ user.created_at }}</td>
                     <td>
                         <span
-                            style="background: rgba(139, 92, 246, 0.2); color: var(--primary); padding: 4px 12px; border-radius: 20px; font-weight: 700;">
+                            style="background: rgba(139, 92, 246, 0.1); color: var(--primary); padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.8rem;">
                             {{ user.timeline_count }} Active
                         </span>
                     </td>
-                    <td>
-                        <span style="color: #22c55e;">● Online</span>
+                    <td style="text-align: right;">
+                        <button class="control-btn" onclick="deleteUser({{ user.id }}, '@{{ user.username }}')"
+                            style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2); padding: 6px 12px; font-size: 0.8rem;">
+                            <i data-lucide="trash-2" style="width: 14px; margin-right: 4px;"></i> Wipe Data
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -88,7 +120,51 @@
         </table>
     </div>
 
-    <script>lucide.createIcons();</script>
+    <script>
+        lucide.createIcons();
+
+        async function generateUser() {
+            const username = document.getElementById('new-username').value;
+            const password = document.getElementById('new-password').value;
+            if (!username || !password) return alert("Credentials required for deployment.");
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(`Identity @${username} has been deployed to the Padsala network.`);
+                    location.reload();
+                } else {
+                    alert(data.error);
+                }
+            } catch (e) { alert("Deployment connection failure."); }
+        }
+
+        async function deleteUser(id, name) {
+            if (!confirm(`WARNING: You are about to wipe all data for recruit ${name}. This action is permanent and will delete all their timelines. Proceed?`)) return;
+
+            try {
+                const res = await fetch('/admin/api/delete-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: id })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById(`user-row-${id}`).style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById(`user-row-${id}`).remove();
+                    }, 300);
+                } else {
+                    alert("Authorization failed or system error.");
+                }
+            } catch (e) { alert("Communication link failure."); }
+        }
+    </script>
 </body>
 
 </html>

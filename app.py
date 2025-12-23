@@ -217,5 +217,23 @@ def admin_portal():
     conn.close()
     return render_template('admin.html', users=users)
 
+@app.route('/admin/api/delete-user', methods=['POST'])
+def admin_delete_user():
+    if 'user_id' not in session or session.get('username') != 'Aashish Ghimire':
+        return jsonify({"error": "Forbidden"}), 403
+    
+    target_id = request.json.get('user_id')
+    if not target_id:
+        return jsonify({"error": "No ID provided"}), 400
+        
+    conn = get_db_connection()
+    # Delete schedules first (FFK)
+    conn.execute('DELETE FROM saved_schedules WHERE user_id = ?', (target_id,))
+    # Delete user
+    conn.execute('DELETE FROM users WHERE id = ?', (target_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
