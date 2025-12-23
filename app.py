@@ -1,17 +1,137 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from planner import generate_study_plan
-from syllabus_db import get_all_metadata, get_chapters
+from syllabus_db import get_all_metadata, get_chapters, get_db_connection
 import nepali_datetime
 from datetime import datetime
+import json
+from werkzeug.security import generate_password_hash, check_password_hash
+import os
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24) # Random key for sessions
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# --- AUTH ROUTES ---
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({"error": "Missing fields"}), 400
+            
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Check if user exists
+        existing = cursor.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone()
+        if existing:
+            return jsonify({"error": "Username already taken"}), 400
+            
+        hashed_pw = generate_password_hash(password)
+        cursor.execute('INSERT INTO users (username, password_hash) VALUES (?, ?)', (username, hashed_pw))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({"success": True, "message": "Account created! You can now login."})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
+        
+        conn = get_db_connection()
+        user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        conn.close()
+        
+        if user and check_password_hash(user['password_hash'], password):
+            session['user_id'] = user['id']
+            session['username'] = user['username']
+            return jsonify({"success": True, "user": {"username": user['username']}})
+            
+        return jsonify({"error": "Invalid credentials"}), 401
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/auth/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
+
+@app.route('/api/auth/status')
+def auth_status():
+    if 'user_id' in session:
+        return jsonify({"logged_in": True, "username": session.get('username')})
+    return jsonify({"logged_in": False})
+
+# --- DATA SYNC ROUTES ---
+@app.route('/api/sync/schedules', methods=['GET'])
+def get_schedules():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    conn = get_db_connection()
+    rows = conn.execute('SELECT name, data, inputs FROM saved_schedules WHERE user_id = ? ORDER BY created_at DESC', (session['user_id'],)).fetchall()
+    conn.close()
+    
+    schedules = []
+    for row in rows:
+        schedules.append({
+            "name": row['name'],
+            "data": json.loads(row['data']),
+            "inputs": json.loads(row['inputs']) if row['inputs'] else {}
+        })
+    return jsonify(schedules)
+
+@app.route('/api/sync/save', methods=['POST'])
+def save_schedule():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    data = request.json
+    name = data.get('name')
+    schedule_data = data.get('data')
+    wizard_inputs = data.get('inputs')
+    
+    conn = get_db_connection()
+    # Check if schedule with this name exists for this user (overwrite)
+    existing = conn.execute('SELECT id FROM saved_schedules WHERE user_id = ? AND name = ?', (session['user_id'], name)).fetchone()
+    
+    if existing:
+        conn.execute('UPDATE saved_schedules SET data = ?, inputs = ? WHERE id = ?', 
+                     (json.dumps(schedule_data), json.dumps(wizard_inputs), existing['id']))
+    else:
+        conn.execute('INSERT INTO saved_schedules (user_id, name, data, inputs) VALUES (?, ?, ?, ?)', 
+                     (session['user_id'], name, json.dumps(schedule_data), json.dumps(wizard_inputs)))
+    
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+@app.route('/api/sync/delete', methods=['POST'])
+def delete_schedule():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    name = request.json.get('name')
+    conn = get_db_connection()
+    conn.execute('DELETE FROM saved_schedules WHERE user_id = ? AND name = ?', (session['user_id'], name))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
 @app.route('/api/metadata', methods=['GET'])
 def get_metadata():
+
     # Return available selections from SQLite
     data = get_all_metadata()
     # Add Current BS Date for defaults

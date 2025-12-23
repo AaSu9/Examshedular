@@ -35,7 +35,12 @@
                 <button class="nav-link active" onclick="switchView('home')" id="nav-home">Home</button>
                 <button class="nav-link" onclick="switchView('dashboard')" id="nav-dashboard">Dashboard</button>
             </nav>
-            <div id="current-bs-display" style="font-size: 0.8rem; opacity: 0.7;">System Ready</div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div id="auth-status" style="font-size: 0.8rem; opacity: 0.7;">
+                    <button class="control-btn" onclick="openAuthModal()">Login</button>
+                </div>
+                <div id="current-bs-display" style="font-size: 0.8rem; opacity: 0.7;">System Ready</div>
+            </div>
         </header>
 
         <!-- VIEWS -->
@@ -287,6 +292,54 @@
                 <button class="btn-primary" id="btn-save-adjust" style="width: 100%; justify-content: center;">
                     Apply Distortion <i data-lucide="zap"></i>
                 </button>
+            </div>
+        </div>
+
+        <!-- GALAXY AUTH MODAL -->
+        <div id="auth-modal" class="modal-overlay">
+            <div class="glass-card modal-content animate-in" style="max-width: 400px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h2 id="auth-modal-title">Access Protocol</h2>
+                    <button class="control-btn" onclick="closeAuthModal()"><i data-lucide="x"></i></button>
+                </div>
+
+                <div id="login-form">
+                    <div style="margin-bottom: 1.5rem;">
+                        <label>Username</label>
+                        <input type="text" id="login-username" class="stream-input"
+                            style="width: 100%; margin-top: 0.5rem;">
+                    </div>
+                    <div style="margin-bottom: 2rem;">
+                        <label>Access Key (Password)</label>
+                        <input type="password" id="login-password" class="stream-input"
+                            style="width: 100%; margin-top: 0.5rem;">
+                    </div>
+                    <button class="btn-primary" onclick="handleAuth('login')"
+                        style="width: 100%; justify-content: center;">Authenticate</button>
+                    <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; opacity: 0.6;">
+                        First time? <a href="#" onclick="toggleAuthForm('register')"
+                            style="color: var(--primary);">Initialize Account</a>
+                    </p>
+                </div>
+
+                <div id="register-form" style="display: none;">
+                    <div style="margin-bottom: 1.5rem;">
+                        <label>New Username</label>
+                        <input type="text" id="reg-username" class="stream-input"
+                            style="width: 100%; margin-top: 0.5rem;">
+                    </div>
+                    <div style="margin-bottom: 2rem;">
+                        <label>New Access Key</label>
+                        <input type="password" id="reg-password" class="stream-input"
+                            style="width: 100%; margin-top: 0.5rem;">
+                    </div>
+                    <button class="btn-primary" onclick="handleAuth('register')"
+                        style="width: 100%; justify-content: center;">Initialize</button>
+                    <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; opacity: 0.6;">
+                        Have an account? <a href="#" onclick="toggleAuthForm('login')"
+                            style="color: var(--primary);">Back to Login</a>
+                    </p>
+                </div>
             </div>
         </div>
 

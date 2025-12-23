@@ -11,6 +11,8 @@ let concentrationStreak = parseInt(localStorage.getItem('padsala_streak') || "0"
 let savedSchedules = JSON.parse(localStorage.getItem('padsala_saved_schedules') || "[]");
 let currentSchedule = null;
 let wizardInputs = JSON.parse(localStorage.getItem('padsala_wizard_inputs') || "{}");
+let isLoggedIn = false;
+let currentUsername = "";
 
 const RANKS = [
     { min: 0, title: "INITIATE" },
@@ -48,13 +50,22 @@ function navigateTo(step) {
 // DATA INIT
 async function initWizard() {
     try {
+        // 1. Check Auth Status
+        const authRes = await fetch('/api/auth/status');
+        const authData = await authRes.json();
+        isLoggedIn = authData.logged_in;
+        if (isLoggedIn) {
+            currentUsername = authData.username;
+            updateAuthUI();
+            await syncSchedules(); // Pull from server
+        }
+
         const res = await fetch('/api/metadata');
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         db = await res.json();
 
-        // Check for existing schedules
+        // Final UI Check
         if (savedSchedules.length > 0) {
-            console.log("Loading persisted gallery...");
             currentSchedule = savedSchedules[0];
             renderGallery();
             renderBlueprint(currentSchedule);
@@ -408,6 +419,118 @@ function playPreset(type) {
     loadYT();
     if (!timerInterval) toggleTimer(); // Auto-start timer on music preset
 }
+
+// AUTHENTICATION LOGIC
+function openAuthModal() {
+    document.getElementById('auth-modal').classList.add('active');
+}
+function closeAuthModal() {
+    document.getElementById('auth-modal').classList.remove('active');
+}
+function toggleAuthForm(type) {
+    document.getElementById('login-form').style.display = type === 'login' ? 'block' : 'none';
+    document.getElementById('register-form').style.display = type === 'register' ? 'block' : 'none';
+    document.getElementById('auth-modal-title').innerText = type === 'login' ? 'Access Protocol' : 'New Identity';
+}
+
+async function handleAuth(type) {
+    const username = document.getElementById(type === 'login' ? 'login-username' : 'reg-username').value;
+    const password = document.getElementById(type === 'login' ? 'login-password' : 'reg-password').value;
+
+    if (!username || !password) return alert("Credentials required");
+
+    try {
+        const res = await fetch(`/api/auth/${type}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            if (type === 'login') {
+                isLoggedIn = true;
+                currentUsername = data.user.username;
+                updateAuthUI();
+                await syncSchedules();
+                closeAuthModal();
+                location.reload(); // Refresh to clean state
+            } else {
+                alert("Account initialized! Please login.");
+                toggleAuthForm('login');
+            }
+        } else {
+            alert(data.error || "Access Denied");
+        }
+    } catch (e) { alert("Comm Error"); }
+}
+
+function updateAuthUI() {
+    const statusEl = document.getElementById('auth-status');
+    if (isLoggedIn) {
+        statusEl.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span style="color: var(--primary); font-weight: 700;">@${currentUsername}</span>
+                <button class="control-btn" style="padding: 4px 8px;" onclick="location.href='/api/auth/logout'">Logout</button>
+            </div>
+        `;
+    }
+}
+
+async function syncSchedules() {
+    try {
+        const res = await fetch('/api/sync/schedules');
+        if (res.ok) {
+            const data = await res.json();
+            if (data.length > 0) {
+                savedSchedules = data;
+                localStorage.setItem('padsala_saved_schedules', JSON.stringify(data));
+            }
+        }
+    } catch (e) { console.error("Sync error", e); }
+}
+
+async function saveToServer(name, data, inputs) {
+    if (!isLoggedIn) return;
+    try {
+        await fetch('/api/sync/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, data, inputs })
+        });
+    } catch (e) { console.error("Cloud save failed", e); }
+}
+
+async function deleteFromServer(name) {
+    if (!isLoggedIn) return;
+    try {
+        await fetch('/api/sync/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+    } catch (e) { console.error("Cloud delete failed", e); }
+}
+
+// Update generateSchedule to use server sync
+const originalGenerateSchedule = generateSchedule;
+generateSchedule = async function () {
+    await originalGenerateSchedule();
+    if (isLoggedIn && savedSchedules.length > 0) {
+        const latest = savedSchedules[savedSchedules.length - 1];
+        await saveToServer(latest.name, latest.data, latest.inputs);
+    }
+};
+
+// Update resetPlan to use server sync
+const originalResetPlan = resetPlan;
+resetPlan = async function () {
+    const nameToDelete = savedSchedules.find(s => s.data === currentSchedule)?.name;
+    await originalResetPlan();
+    if (isLoggedIn && nameToDelete) {
+        await deleteFromServer(nameToDelete);
+    }
+};
 
 // PWA Registration
 if ('serviceWorker' in navigator) {

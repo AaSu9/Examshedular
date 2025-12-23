@@ -153,6 +153,25 @@ def init_db():
     cursor.execute('CREATE TABLE semesters (id INTEGER PRIMARY KEY, course_id INTEGER, name TEXT, FOREIGN KEY(course_id) REFERENCES courses(id))')
     cursor.execute('CREATE TABLE subjects (id INTEGER PRIMARY KEY, semester_id INTEGER, name TEXT, FOREIGN KEY(semester_id) REFERENCES semesters(id))')
     cursor.execute('CREATE TABLE chapters (id INTEGER PRIMARY KEY, subject_id INTEGER, name TEXT, FOREIGN KEY(subject_id) REFERENCES subjects(id))')
+    
+    # Auth & Multi-Timeline Tables
+    cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        email TEXT UNIQUE,
+        password_hash TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
+
+    cursor.execute('''CREATE TABLE IF NOT EXISTS saved_schedules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        data TEXT NOT NULL,  -- JSON string of the schedule
+        inputs TEXT,         -- JSON string of wizard inputs
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )''')
 
     # Seed data
     for uni_name, faculties in SYLLABUS_DATA.items():
