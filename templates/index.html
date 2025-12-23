@@ -54,24 +54,41 @@
 
             <!-- 1. WELCOME -->
             <div id="step-1" class="step-container active">
-                <div style="text-align: center; padding: 4rem 0;">
+                <div style="text-align: center; padding: 2rem 0;">
                     <div class="glow-icon"
-                        style="margin: 0 auto 2rem; width: 80px; height: 80px; background: var(--primary); border-radius: 24px; display: flex; align-items: center; justify-content: center; box-shadow: var(--neon-shadow);">
-                        <i data-lucide="sparkles" style="width: 40px; height: 40px; color: white;"></i>
+                        style="margin: 0 auto 2rem; width: 80px; height: 80px; background: rgba(139, 92, 246, 0.2); border: 1px solid var(--primary); border-radius: 24px; display: flex; align-items: center; justify-content: center; box-shadow: var(--neon-shadow);">
+                        <i data-lucide="sparkles" style="width: 40px; height: 40px; color: var(--primary);"></i>
                     </div>
-                    <h1 class="text-gradient" style="font-size: 3.5rem; margin-bottom: 1rem;">Protocol: Alpha</h1>
-                    <p style="font-size: 1.2rem; color: #94a3b8; max-width: 600px; margin: 0 auto 3rem;">
-                        Command your academic journey. Generate multi-layered timelines for Regular and Back exams with
-                        zero distortion.
+                    <h1 class="text-gradient" style="font-size: 3rem; margin-bottom: 1rem;">System Bridge</h1>
+                    <p style="font-size: 1.1rem; color: #94a3b8; max-width: 600px; margin: 0 auto 3rem;">
+                        Manage your current cognitive architecture or initialize new study protocols for upcoming exam
+                        phases.
                     </p>
-                    <button class="btn-primary" onclick="navigateTo(2)"
-                        style="font-size: 1.1rem; padding: 1.2rem 3rem;">
-                        Initiate Setup <i data-lucide="command"></i>
-                    </button>
+
+                    <div id="home-protocols-container"
+                        style="display: flex; flex-direction: column; gap: 1rem; max-width: 500px; margin: 0 auto;">
+                        <!-- Quick Link to Dashboard -->
+                        <button class="btn-primary" onclick="navigateTo(2)"
+                            style="justify-content: center; font-size: 1.1rem; padding: 1.5rem;">
+                            Initialize New Protocol <i data-lucide="plus-circle"></i>
+                        </button>
+
+                        <div id="home-active-summary" class="glass-card" style="padding: 1.5rem; display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.9rem; opacity: 0.7;">Active Protocols:</span>
+                                <span id="home-protocol-count" style="font-weight: 800; color: var(--primary);">0</span>
+                            </div>
+                            <button class="control-btn" onclick="switchView('dashboard')"
+                                style="width: 100%; margin-top: 1rem; border-color: var(--primary); color: var(--primary);">
+                                Open Dashboard <i data-lucide="layout"></i>
+                            </button>
+                        </div>
+                    </div>
 
                     <div id="home-welcome-user"
-                        style="margin-top: 2rem; font-weight: 600; color: var(--primary); display: none;">
-                        Welcome back, <span id="welcome-username">user</span>.
+                        style="margin-top: 3rem; font-weight: 600; color: #64748b; font-size: 0.9rem;">
+                        Logged as <span id="welcome-username" style="color: var(--primary);">guest</span>.
+                        Join the <span style="color: #fff;">Padsala Alpha</span> collective.
                     </div>
                 </div>
             </div>
@@ -309,40 +326,50 @@
                 </div>
 
                 <div id="login-form">
-                    <div style="margin-bottom: 1.5rem;">
-                        <label><i data-lucide="user" style="width: 14px;"></i> Username</label>
-                        <input type="text" id="login-username" class="stream-input"
-                            style="width: 100%; margin-top: 0.5rem;" placeholder="Mission ID">
+                    <div class="input-group">
+                        <input type="text" id="login-username" class="stream-input" placeholder=" " required>
+                        <label class="input-label"><i data-lucide="user" style="width: 14px;"></i> Mission ID</label>
                     </div>
-                    <div style="margin-bottom: 2rem;">
-                        <label><i data-lucide="key" style="width: 14px;"></i> Access Key</label>
-                        <input type="password" id="login-password" class="stream-input"
-                            style="width: 100%; margin-top: 0.5rem;" placeholder="••••••••">
+                    <div class="input-group">
+                        <input type="password" id="login-password" class="stream-input" placeholder=" " required>
+                        <label class="input-label"><i data-lucide="key" style="width: 14px;"></i> Access Key</label>
+                        <i data-lucide="eye"
+                            style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; opacity: 0.5;"
+                            onclick="togglePassword('login-password')"></i>
                     </div>
                     <button class="btn-primary" onclick="handleAuth('login')"
-                        style="width: 100%; justify-content: center;">Authenticate</button>
+                        style="width: 100%; justify-content: center;">
+                        Initiate Connection <i data-lucide="zap"></i>
+                    </button>
                     <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; opacity: 0.6;">
-                        First time? <a href="#" onclick="toggleAuthForm('register')"
-                            style="color: var(--primary);">Initialize Account</a>
+                        New Recruit? <a href="#" onclick="toggleAuthForm('register')"
+                            style="color: var(--primary); text-decoration: none; border-bottom: 1px dashed;">Register
+                            Identity</a>
                     </p>
                 </div>
 
                 <div id="register-form" style="display: none;">
-                    <div style="margin-bottom: 1.5rem;">
-                        <label><i data-lucide="user-plus" style="width: 14px;"></i> New Username</label>
-                        <input type="text" id="reg-username" class="stream-input"
-                            style="width: 100%; margin-top: 0.5rem;" placeholder="Pick a Profile Name">
+                    <div class="input-group">
+                        <input type="text" id="reg-username" class="stream-input" placeholder=" " required>
+                        <label class="input-label"><i data-lucide="user-plus" style="width: 14px;"></i> Target
+                            ID</label>
                     </div>
-                    <div style="margin-bottom: 2rem;">
-                        <label><i data-lucide="lock" style="width: 14px;"></i> Security Code</label>
-                        <input type="password" id="reg-password" class="stream-input"
-                            style="width: 100%; margin-top: 0.5rem;" placeholder="Min 6 characters">
+                    <div class="input-group">
+                        <input type="password" id="reg-password" class="stream-input" placeholder=" " required>
+                        <label class="input-label"><i data-lucide="lock" style="width: 14px;"></i> Encryption
+                            Code</label>
+                        <i data-lucide="eye"
+                            style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; opacity: 0.5;"
+                            onclick="togglePassword('reg-password')"></i>
                     </div>
                     <button class="btn-primary" onclick="handleAuth('register')"
-                        style="width: 100%; justify-content: center;">Initialize Profile</button>
+                        style="width: 100%; justify-content: center;">
+                        Establish Link <i data-lucide="shield-check"></i>
+                    </button>
                     <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; opacity: 0.6;">
-                        Have an account? <a href="#" onclick="toggleAuthForm('login')"
-                            style="color: var(--primary);">Back to Login</a>
+                        Identified? <a href="#" onclick="toggleAuthForm('login')"
+                            style="color: var(--primary); text-decoration: none; border-bottom: 1px dashed;">Return to
+                            Bridge</a>
                     </p>
                 </div>
             </div>

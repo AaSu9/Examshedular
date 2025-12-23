@@ -64,12 +64,14 @@ async function initWizard() {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         db = await res.json();
 
-        // Final UI Check
+        // Initial View Determination
         if (savedSchedules.length > 0) {
             currentSchedule = savedSchedules[0];
             renderGallery();
             renderBlueprint(currentSchedule);
-            switchView('dashboard');
+            // Land on Dashboard only if there's no "current session" in Home
+            // But let them stay on Home for the "System Ready" feel
+            switchView('home');
         } else {
             populateDropdown('select-university', Object.keys(db));
             switchView('home');
@@ -424,6 +426,11 @@ function playPreset(type) {
 }
 
 // AUTHENTICATION LOGIC
+function togglePassword(id) {
+    const el = document.getElementById(id);
+    el.type = el.type === 'password' ? 'text' : 'password';
+}
+
 function openAuthModal() {
     document.getElementById('auth-modal').classList.add('active');
 }
@@ -470,8 +477,9 @@ async function handleAuth(type) {
 
 function updateAuthUI() {
     const statusEl = document.getElementById('auth-status');
-    const homeWelcome = document.getElementById('home-welcome-user');
     const welcomeUser = document.getElementById('welcome-username');
+    const homeSummary = document.getElementById('home-active-summary');
+    const homeCount = document.getElementById('home-protocol-count');
 
     if (isLoggedIn) {
         statusEl.innerHTML = `
@@ -480,10 +488,15 @@ function updateAuthUI() {
                 <button class="control-btn" style="padding: 4px 8px;" onclick="location.href='/api/auth/logout'">Logout</button>
             </div>
         `;
-        if (homeWelcome) {
-            homeWelcome.style.display = 'block';
-            welcomeUser.innerText = currentUsername;
-        }
+        if (welcomeUser) welcomeUser.innerText = currentUsername;
+    }
+
+    // Multi-Timeline Summary on Home
+    if (savedSchedules.length > 0) {
+        if (homeSummary) homeSummary.style.display = 'block';
+        if (homeCount) homeCount.innerText = savedSchedules.length;
+    } else {
+        if (homeSummary) homeSummary.style.display = 'none';
     }
 }
 
