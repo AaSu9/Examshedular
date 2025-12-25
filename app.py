@@ -83,11 +83,39 @@ def get_schedules():
     rows = conn.execute('SELECT name, data, inputs FROM saved_schedules WHERE user_id = ? ORDER BY created_at DESC', (session['user_id'],)).fetchall()
     conn.close()
     
+    # v17: Use Nepal Time for dynamic status updates
+    nepal_now = datetime.utcnow() + timedelta(hours=5, minutes=45)
+    today_ad_str = nepal_now.date().strftime("%Y-%m-%d")
+
     schedules = []
     for row in rows:
+        sch_data = json.loads(row['data'])
+        
+        # Legacy Patch: Inject ad_date if missing
+        if 'days' in sch_data:
+            for day in sch_data['days']:
+                if 'ad_date' not in day and 'bs_date' in day:
+                    try:
+                        # Convert BS string "2082-01-01" to AD
+                        y, m, d = map(int, day['bs_date'].split('-'))
+                        import nepali_datetime
+                        np_date = nepali_datetime.date(y, m, d)
+                        day['ad_date'] = str(np_date.to_datetime_date())
+                    except:
+                        pass
+                
+                # Update Status on the fly based on ad_date
+                if 'ad_date' in day:
+                    if day['ad_date'] < today_ad_str:
+                        day['status'] = 'completed'
+                    elif day['ad_date'] == today_ad_str:
+                        day['status'] = 'today'
+                    else:
+                        day['status'] = 'upcoming'
+
         schedules.append({
             "name": row['name'],
-            "data": json.loads(row['data']),
+            "data": sch_data,
             "inputs": json.loads(row['inputs']) if row['inputs'] else {}
         })
     return jsonify(schedules)
