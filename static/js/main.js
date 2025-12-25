@@ -264,22 +264,37 @@ function renderBlueprint(data) {
 
     data.days.forEach((day, idx) => {
         const isHoliday = day.tasks.length === 1 && day.tasks[0].activity.includes("HOLIDAY");
+        const isCompleted = day.status === 'completed';
+        const isToday = day.status === 'today';
+
+        // Dynamic Border Calculation
+        let borderColor = 'rgba(255,255,255,0.1)';
+        if (day.is_exam_day) borderColor = '#ef4444';
+        else if (isToday) borderColor = 'var(--primary)';
+
+        // Opacity for past days
+        const cardStyle = `padding: 2rem; border-color: ${borderColor}; ${isCompleted ? 'opacity: 0.5; filter: grayscale(1);' : ''} ${isToday ? 'box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);' : ''}`;
+
         html += `
-        <div class="glass-card" style="padding: 2rem; border-color: ${day.is_exam_day ? '#ef4444' : 'rgba(255,255,255,0.1)'}">
+        <div class="glass-card" style="${cardStyle}">
             <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                <span style="opacity: 0.7;">${day.bs_date}</span>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <button class="control-btn" style="padding: 4px 8px; font-size: 0.7rem; height: auto;" onclick="editDayHours(${idx})">
+                    <span style="opacity: 0.7;">${day.bs_date}</span>
+                    ${isCompleted ? '<span style="font-size: 0.7rem; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">DONE</span>' : ''}
+                    ${isToday ? '<span style="font-size: 0.7rem; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px;">TODAY</span>' : ''}
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    ${!isCompleted ? `<button class="control-btn" style="padding: 4px 8px; font-size: 0.7rem; height: auto;" onclick="editDayHours(${idx})">
                         <i data-lucide="clock" style="width: 12px; height: 12px;"></i> Adjust
-                    </button>
+                    </button>` : ''}
                     <span style="font-weight: 700; color: #a78bfa;">${day.subject}</span>
                 </div>
             </div>
             <h3 style="margin-bottom: 1.5rem;">${day.daily_focus || 'Focus Session'}</h3>
             <div id="day-tasks-${idx}">
                 ${day.tasks.map(t => `
-                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; ${isHoliday ? 'opacity: 0.5' : 'cursor: pointer;'}" 
-                         ${!isHoliday ? `onclick="enterFocus('${day.subject}', '${t.activity.replace(/'/g, "\\'")}', ${t.minutes})"` : ''}>
+                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; ${isHoliday || isCompleted ? 'opacity: 0.7' : 'cursor: pointer;'}" 
+                         ${!isHoliday && !isCompleted ? `onclick="enterFocus('${day.subject}', '${t.activity.replace(/'/g, "\\'")}', ${t.minutes})"` : ''}>
                         <span style="color: #d946ef; font-weight: 700; margin-right: 1rem;">${t.time}</span>
                         ${t.activity}
                     </div>
@@ -408,6 +423,22 @@ function updateTimerUI() {
     if (fill) fill.style.strokeDashoffset = 974 - (secondsRemaining / totalSecondsInSession) * 974;
 }
 
+// AUDIO ENGINE v17
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playTone(freq, type, duration) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+}
+
 function toggleTimer() {
     const btn = document.getElementById('btn-play-pause');
     if (timerInterval) {
@@ -416,9 +447,23 @@ function toggleTimer() {
         btn.innerHTML = `<i data-lucide="play"></i> Resume`;
         document.getElementById('bar-play-icon').setAttribute('data-lucide', 'play');
     } else {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
         timerInterval = setInterval(() => {
             if (secondsRemaining > 0) {
                 secondsRemaining--;
+
+                // AUDITORY CUES
+                // 1. Tik-Tik every second (Subconscious Rhythm)
+                playTone(800, 'sine', 0.05);
+
+                // 2. 5-Minute Warning (Double Beep)
+                if (secondsRemaining === 300) {
+                    playTone(600, 'square', 0.2);
+                    setTimeout(() => playTone(600, 'square', 0.2), 300);
+                    triggerFocusWarning("5 Minutes Remaining - Final Push!");
+                }
+
                 // Track Idle Time
                 if (Date.now() - focusBiometrics.lastActive > 30000) {
                     focusBiometrics.idleSeconds++;

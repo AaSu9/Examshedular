@@ -143,10 +143,18 @@ def generate_study_plan(exams_list, daily_study_hours=8, session_mins=90, break_
     for i, date in enumerate(all_dates):
         if date in exam_map:
             ex = exam_map[date]
+            if date < today_ad:
+                day_status = "completed"
+            elif date == today_ad:
+                day_status = "today"
+            else:
+                day_status = "upcoming"
+
             final_days.append({
                 "id": f"day-{i}",
                 "bs_date": ad_to_bs(date),
                 "is_exam_day": True,
+                "status": day_status,
                 "subject": ex['name'],
                 "tasks": get_micro_plan(ex['name'], "EXAM PREP", daily_study_hours, session_mins, break_mins, is_exam=True, start_time_str=start_time)
             })
@@ -211,10 +219,18 @@ def generate_study_plan(exams_list, daily_study_hours=8, session_mins=90, break_
         
         if study_sub['difficulty'] == 3: adjusted_hours = min(daily_ceiling, adjusted_hours + 1)
 
+        if date < today_ad:
+            day_status = "completed"
+        elif date == today_ad:
+            day_status = "today"
+        else:
+            day_status = "upcoming"
+
         final_days.append({
             "id": f"day-{i}",
             "bs_date": ad_to_bs(date),
             "is_exam_day": False,
+            "status": day_status,
             "subject": study_sub['name'],
             "daily_focus": focus_area,
             "mastery_focus": True if weak_topic else False,
