@@ -126,7 +126,11 @@ def generate_study_plan(exams_list, daily_study_hours=8, session_mins=90, break_
             continue
     
     prepared_exams.sort(key=lambda x: x['ad_date'])
-    today_ad = datetime.now().date()
+    
+    # v17: Use Nepal Time (UTC+5:45) for accurate 'Today'
+    nepal_now = datetime.utcnow() + timedelta(hours=5, minutes=45)
+    today_ad = nepal_now.date()
+    
     last_exam_ad = prepared_exams[-1]['ad_date']
     
     all_dates = []

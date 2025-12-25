@@ -431,7 +431,7 @@ function playTone(freq, type, duration) {
     const gain = audioCtx.createGain();
     osc.type = type;
     osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime); // Louder (0.3)
     gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
@@ -454,8 +454,8 @@ function toggleTimer() {
                 secondsRemaining--;
 
                 // AUDITORY CUES
-                // 1. Tik-Tik every second (Subconscious Rhythm)
-                playTone(800, 'sine', 0.05);
+                // 1. Tik-Tik every second (Louder & Sharper)
+                playTone(1000, 'triangle', 0.05);
 
                 // 2. 5-Minute Warning (Double Beep)
                 if (secondsRemaining === 300) {
