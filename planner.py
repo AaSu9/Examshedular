@@ -157,6 +157,7 @@ def generate_study_plan(exams_list, daily_study_hours=8, session_mins=90, break_
             final_days.append({
                 "id": f"day-{i}",
                 "bs_date": ad_to_bs(date),
+                "ad_date": str(date),
                 "is_exam_day": True,
                 "status": day_status,
                 "subject": ex['name'],
@@ -233,6 +234,7 @@ def generate_study_plan(exams_list, daily_study_hours=8, session_mins=90, break_
         final_days.append({
             "id": f"day-{i}",
             "bs_date": ad_to_bs(date),
+            "ad_date": str(date),
             "is_exam_day": False,
             "status": day_status,
             "subject": study_sub['name'],

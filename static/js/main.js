@@ -262,10 +262,29 @@ function renderBlueprint(data) {
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 2rem;">`;
 
+    // Dynamic Date Calculation (Client Side)
+    const today = new Date();
+    // Format to YYYY-MM-DD manually to match ad_date
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const dayDate = String(today.getDate()).padStart(2, '0');
+    const clientDateStr = `${year}-${month}-${dayDate}`; // 2025-12-25
+
     data.days.forEach((day, idx) => {
         const isHoliday = day.tasks.length === 1 && day.tasks[0].activity.includes("HOLIDAY");
-        const isCompleted = day.status === 'completed';
-        const isToday = day.status === 'today';
+
+        // Use dynamic calculation if ad_date exists, otherwise fall back to static status
+        let isCompleted = false;
+        let isToday = false;
+
+        if (day.ad_date) {
+            if (day.ad_date < clientDateStr) isCompleted = true;
+            else if (day.ad_date === clientDateStr) isToday = true;
+        } else {
+            // Fallback for old schedules
+            isCompleted = day.status === 'completed';
+            isToday = day.status === 'today';
+        }
 
         // Dynamic Border Calculation
         let borderColor = 'rgba(255,255,255,0.1)';
