@@ -286,11 +286,30 @@ function renderBlueprint(data) {
             </button>
         </div>`;
 
-    // 2. VIEW RENDERER
+    // 2. VIEW RENDERER (With Gallery Injection)
+    let galleyHtml = '';
+    if (savedSchedules.length > 0) {
+        galleyHtml = `
+        <div class="timeline-gallery-scroll" style="display: flex; gap: 0.8rem; overflow-x: auto; padding-bottom: 0.5rem; margin-bottom: 1.5rem; -webkit-overflow-scrolling: touch;">
+            ${savedSchedules.map((s, i) => `
+                <div onclick="loadTimeline(${i})" 
+                     style="padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; border: 1px solid ${currentSchedule === s.data ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}; background: ${currentSchedule === s.data ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255,255,255,0.03)'}; color: ${currentSchedule === s.data ? 'white' : 'var(--text-muted)'}; box-shadow: ${currentSchedule === s.data ? '0 0 10px rgba(139, 92, 246, 0.2)' : 'none'};">
+                     ${s.name}
+                </div>
+            `).join('')}
+            
+            <div onclick="switchView('home'); initiateNewProtocol();" 
+                 style="padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; white-space: nowrap; border: 1px dashed var(--primary); color: var(--primary); background: rgba(139, 92, 246, 0.05);">
+                + New Plan
+            </div>
+        </div>
+        `;
+    }
+
     if (dashboardViewMode === 'calendar') {
-        html += renderCalendarGrid(data.days, clientDateStr);
+        html += galleyHtml + renderCalendarGrid(data.days, clientDateStr);
     } else {
-        html += renderFocusCard(data.days, clientDateStr);
+        html += galleyHtml + renderFocusCard(data.days, clientDateStr);
     }
 
     dashContainer.innerHTML = html;
