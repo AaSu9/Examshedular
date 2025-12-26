@@ -372,57 +372,55 @@ def get_analytics_v17():
         "mastery": mastery_map
     })
 
+# --- GAMIFICATION & SOCIAL API (v17 Refined) ---
+
+@app.route('/api/v17/sync-xp', methods=['POST'])
+def sync_xp():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.json
+    xp = data.get('xp', 0)
+    streak = data.get('streak', 0)
+    
+    conn = get_db_connection()
+    conn.execute('UPDATE users SET xp = ?, streak = ? WHERE id = ?', (xp, streak, session['user_id']))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+@app.route('/api/v17/leaderboard', methods=['GET'])
+def get_leaderboard():
+    conn = get_db_connection()
+    # Get Top 10 Users by XP
+    top_users = conn.execute('SELECT username, xp, streak, avatar, is_pro FROM users ORDER BY xp DESC LIMIT 10').fetchall()
+    
+    # Get Current User Rank
+    user_rank = -1
+    if 'user_id' in session:
+        # Handle case where user might not exist or XP is null
+        try:
+             rank_query = conn.execute('SELECT COUNT(*) FROM users WHERE xp > (SELECT xp FROM users WHERE id = ?)', (session['user_id'],)).fetchone()
+             user_rank = rank_query[0] + 1
+        except:
+             pass
+
+    conn.close()
+    
+    leaderboard = []
+    for u in top_users:
+        leaderboard.append({
+            'username': u['username'],
+            'xp': u['xp'],
+            'streak': u['streak'],
+            'avatar': u['avatar'],
+            'is_pro': bool(u['is_pro'])
+        })
+        
+    return jsonify({
+        'leaderboard': leaderboard,
+        'user_rank': user_rank
+    })
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
-
- #   - - -   G A M I F I C A T I O N   &   S O C I A L   A P I   ( v 1 7   R e f i n e d )   - - - 
- 
- @ a p p . r o u t e ( ' / a p i / v 1 7 / s y n c - x p ' ,   m e t h o d s = [ ' P O S T ' ] ) 
- d e f   s y n c _ x p ( ) : 
-         i f   ' u s e r _ i d '   n o t   i n   s e s s i o n : 
-                 r e t u r n   j s o n i f y ( { ' e r r o r ' :   ' U n a u t h o r i z e d ' } ) ,   4 0 1 
-         
-         d a t a   =   r e q u e s t . j s o n 
-         x p   =   d a t a . g e t ( ' x p ' ,   0 ) 
-         s t r e a k   =   d a t a . g e t ( ' s t r e a k ' ,   0 ) 
-         
-         c o n n   =   g e t _ d b _ c o n n e c t i o n ( ) 
-         c o n n . e x e c u t e ( ' U P D A T E   u s e r s   S E T   x p   =   ? ,   s t r e a k   =   ?   W H E R E   i d   =   ? ' ,   ( x p ,   s t r e a k ,   s e s s i o n [ ' u s e r _ i d ' ] ) ) 
-         c o n n . c o m m i t ( ) 
-         c o n n . c l o s e ( ) 
-         r e t u r n   j s o n i f y ( { ' s u c c e s s ' :   T r u e } ) 
- 
- @ a p p . r o u t e ( ' / a p i / v 1 7 / l e a d e r b o a r d ' ,   m e t h o d s = [ ' G E T ' ] ) 
- d e f   g e t _ l e a d e r b o a r d ( ) : 
-         c o n n   =   g e t _ d b _ c o n n e c t i o n ( ) 
-         #   G e t   T o p   1 0   U s e r s   b y   X P 
-         t o p _ u s e r s   =   c o n n . e x e c u t e ( ' S E L E C T   u s e r n a m e ,   x p ,   s t r e a k ,   a v a t a r ,   i s _ p r o   F R O M   u s e r s   O R D E R   B Y   x p   D E S C   L I M I T   1 0 ' ) . f e t c h a l l ( ) 
-         
-         #   G e t   C u r r e n t   U s e r   R a n k 
-         u s e r _ r a n k   =   - 1 
-         i f   ' u s e r _ i d '   i n   s e s s i o n : 
-                 #   H a n d l e   c a s e   w h e r e   u s e r   m i g h t   n o t   e x i s t   o r   X P   i s   n u l l 
-                 t r y : 
-                           r a n k _ q u e r y   =   c o n n . e x e c u t e ( ' S E L E C T   C O U N T ( * )   F R O M   u s e r s   W H E R E   x p   >   ( S E L E C T   x p   F R O M   u s e r s   W H E R E   i d   =   ? ) ' ,   ( s e s s i o n [ ' u s e r _ i d ' ] , ) ) . f e t c h o n e ( ) 
-                           u s e r _ r a n k   =   r a n k _ q u e r y [ 0 ]   +   1 
-                 e x c e p t : 
-                           p a s s 
- 
-         c o n n . c l o s e ( ) 
-         
-         l e a d e r b o a r d   =   [ ] 
-         f o r   u   i n   t o p _ u s e r s : 
-                 l e a d e r b o a r d . a p p e n d ( { 
-                         ' u s e r n a m e ' :   u [ ' u s e r n a m e ' ] , 
-                         ' x p ' :   u [ ' x p ' ] , 
-                         ' s t r e a k ' :   u [ ' s t r e a k ' ] , 
-                         ' a v a t a r ' :   u [ ' a v a t a r ' ] , 
-                         ' i s _ p r o ' :   b o o l ( u [ ' i s _ p r o ' ] ) 
-                 } ) 
-                 
-         r e t u r n   j s o n i f y ( { 
-                 ' l e a d e r b o a r d ' :   l e a d e r b o a r d , 
-                 ' u s e r _ r a n k ' :   u s e r _ r a n k 
-         } ) 
-  
- 
