@@ -822,8 +822,131 @@ async function fetchMirrorData() {
     }
 }
 
+// VOICE SYSTEM v17 (Behavioral Sound Designer)
+class VoiceEngine {
+    constructor() {
+        this.enabled = true;
+        this.mode = 'serious'; // serious | light | silent
+        this.volume = 0.8;
+        this.cooldowns = {};
+        this.lang = 'ne-NP';
+
+        // SCRIPT LIBRARY (Senior Dai Persona)
+        this.scripts = {
+            'login_day': { serious: "आउ है, पढ्न बस।", light: "ल है, आज अलिकति कडा मेहनत।" },
+            'app_load': { serious: "Padsala तयार छ।", light: "पढ् सालाँ!" },
+            'plan_generated': { serious: "आजको बाटो तय भयो।", light: "Step by step, सकिन्छ।" },
+            'task_start': { serious: "यहीबाट सुरु गर।", light: "पहिलो कदम!" },
+            'vault_enter': { serious: "अब ध्यान दे।", light: "Vault सुरु!" },
+            'tab_switch': { serious: "फर्क।", light: "यहाँ बस!" },
+            'warning_5m': { serious: "अलिकति अझै, अन्तिम जोर।", light: "Last 5 minutes, give your best!" },
+            'session_done': { serious: "राम्रै गरिस्। आजको लक्ष्य पूरा।", light: "Well done, take a break." },
+            'neural_open': { serious: "के सिकिस्? मनमा बसाल।", light: "Quick recall, what stuck?" },
+            'neural_submit': { serious: "यही याद रहोस्। Strong बन्यो।", light: "Saved to memory." }
+        };
+
+        this.loadSettings();
+    }
+
+    loadSettings() {
+        const saved = localStorage.getItem('padsala_voice_config');
+        if (saved) {
+            const config = JSON.parse(saved);
+            this.enabled = config.enabled;
+            this.mode = config.mode;
+            this.volume = config.volume;
+        }
+        this.updateUI();
+    }
+
+    saveSettings() {
+        localStorage.setItem('padsala_voice_config', JSON.stringify({
+            enabled: this.enabled,
+            mode: this.mode,
+            volume: this.volume
+        }));
+    }
+
+    trigger(key) {
+        if (!this.enabled || this.mode === 'silent') return;
+
+        // Cooldown Logic (30 mins) - exception for "tab_switch" (immediate correction)
+        const now = Date.now();
+        const cooldownTime = key === 'tab_switch' ? 5000 : 30 * 60 * 1000;
+
+        if (this.cooldowns[key] && (now - this.cooldowns[key] < cooldownTime)) {
+            return;
+        }
+
+        const text = this.scripts[key][this.mode] || this.scripts[key]['serious'];
+        this.speak(key, text);
+        this.cooldowns[key] = now;
+    }
+
+    speak(key, text) {
+        // 1. Try playing OGG file first (Preferred)
+        const audio = new Audio(`/static/audio/voi_${key}_${this.mode}.ogg`);
+        audio.volume = this.volume;
+
+        audio.play().catch(e => {
+            // 2. Fallback to Browser TTS (Behavioral Safety Net)
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'ne-NP'; // Try Nepali
+            // If Nepali not installed, it might use fallback voice, which is acceptable for v1
+            u.volume = this.volume;
+            u.rate = 0.9;
+            u.pitch = 0.8;
+            window.speechSynthesis.speak(u);
+        });
+    }
+
+    // UI Controls
+    toggle(val) { this.enabled = val; this.saveSettings(); }
+    setMode(val) {
+        this.mode = val;
+        this.saveSettings();
+        document.querySelectorAll('.preset-grid button').forEach(b => b.classList.remove('active'));
+        document.getElementById(`mode-${val}`).classList.add('active');
+    }
+    setVolume(val) { this.volume = parseFloat(val); this.saveSettings(); }
+
+    updateUI() {
+        if (document.getElementById('voice-toggle')) {
+            document.getElementById('voice-toggle').checked = this.enabled;
+            document.getElementById('voice-volume').value = this.volume;
+            document.querySelectorAll('.preset-grid button').forEach(b => b.classList.remove('active'));
+            if (document.getElementById(`mode-${this.mode}`))
+                document.getElementById(`mode-${this.mode}`).classList.add('active');
+        }
+    }
+}
+
+const voiceSystem = new VoiceEngine();
+
+function toggleSettings() {
+    const modal = document.getElementById('settings-modal');
+    if (modal.style.display === 'flex') {
+        modal.querySelector('.modal-content').classList.remove('animate-in');
+        modal.style.display = 'none';
+    } else {
+        modal.style.display = 'flex';
+        modal.querySelector('.modal-content').classList.add('animate-in');
+        voiceSystem.updateUI();
+    }
+}
+
+// Global Visibility Listener for Discipline
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden && focusModeActive) {
+        focusBiometrics.tabSwitches++;
+        triggerFocusWarning("Don't Switch Tabs! Focus Score Dropping.");
+        voiceSystem.trigger('tab_switch');
+    }
+});
+
 // BOOT ENGINE
 window.onload = () => {
     initWizard();
     initSnow();
+    voiceSystem.trigger('app_load');
 };

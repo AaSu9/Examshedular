@@ -41,6 +41,10 @@
                     <button class="control-btn" onclick="openAuthModal()">Login</button>
                 </div>
                 <div id="current-bs-display" style="font-size: 0.8rem; opacity: 0.7;">System Ready</div>
+                <button class="control-btn" onclick="toggleSettings()"
+                    style="padding: 0.5rem; border: none; background: transparent;">
+                    <i data-lucide="sliders-horizontal" style="width: 18px;"></i>
+                </button>
             </div>
         </header>
 
@@ -371,6 +375,56 @@
                 <button class="btn-primary" id="btn-save-adjust" style="width: 100%; justify-content: center;">
                     Apply Distortion <i data-lucide="zap"></i>
                 </button>
+            </div>
+        </div>
+
+        <!-- SETTINGS MODAL -->
+        <div class="modal-overlay" id="settings-modal">
+            <div class="modal-content glass-card" style="max-width: 400px; padding: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h2 class="text-gradient">System Settings</h2>
+                    <button class="control-btn" onclick="toggleSettings()"
+                        style="border: none; background: transparent;">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+
+                <div style="margin-bottom: 2rem;">
+                    <h3
+                        style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 1rem;">
+                        Voice Assistant (Senior Dai)
+                    </h3>
+
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <span>Enable Voice</span>
+                        <label class="switch">
+                            <input type="checkbox" id="voice-toggle" checked
+                                onchange="voiceSystem.toggle(this.checked)">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem;">Personality Mode</label>
+                        <div class="preset-grid">
+                            <button class="control-btn active" id="mode-serious"
+                                onclick="voiceSystem.setMode('serious')">Serious</button>
+                            <button class="control-btn" id="mode-light"
+                                onclick="voiceSystem.setMode('light')">Light</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Volume</label>
+                        <input type="range" id="voice-volume" min="0" max="1" step="0.1" value="0.8"
+                            style="width: 100%; margin-top: 0.5rem;" onchange="voiceSystem.setVolume(this.value)">
+                    </div>
+                </div>
+
+                <div style="text-align: center; font-size: 0.8rem; opacity: 0.6; margin-top: 2rem;">
+                    Padsala v17 | Cognitive Engine
+                </div>
             </div>
         </div>
 
