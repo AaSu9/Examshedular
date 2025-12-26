@@ -3,7 +3,7 @@ import sqlite3
 def migrate():
     print("--- Padsala v17 Database Migration ---")
     try:
-        conn = sqlite3.connect('syllabus.db')
+        conn = sqlite3.connect('padsala.db')
         cursor = conn.cursor()
         
         # New columns for Gamification (v17)
