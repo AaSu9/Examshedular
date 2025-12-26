@@ -248,10 +248,26 @@ function resetPlan() {
     }
 }
 
+// DASHBOARD UI LOGIC
+let fullTimelineVisible = false;
+
+function toggleFullTimeline() {
+    fullTimelineVisible = !fullTimelineVisible;
+    renderBlueprint(currentSchedule);
+}
+
 function renderBlueprint(data) {
+    if (!data || !data.days) return;
+
     // Both containers
     const dashContainer = document.getElementById('blueprint-content');
-    const homeContainer = document.getElementById('home-blueprint-content');
+
+    // Dynamic Date Calculation (Client Side)
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const dayDate = String(today.getDate()).padStart(2, '0');
+    const clientDateStr = `${year}-${month}-${dayDate}`;
 
     let html = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
@@ -262,41 +278,25 @@ function renderBlueprint(data) {
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 2rem;">`;
 
-    // Dynamic Date Calculation (Client Side)
-    const today = new Date();
-    // Format to YYYY-MM-DD manually to match ad_date
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const dayDate = String(today.getDate()).padStart(2, '0');
-    const clientDateStr = `${year}-${month}-${dayDate}`; // 2025-12-25
-
-    console.log(`[DEBUG] Client Date: ${clientDateStr}`);
-
-    if (!data || !data.days) {
-        console.warn("renderBlueprint: No data received");
-        dashContainer.innerHTML = `<div style="text-align:center; padding: 2rem; opacity: 0.5;">No schedule active. Initialize a protocol.</div>`;
-        if (homeContainer) homeContainer.innerHTML = "";
-        return;
-    }
+    let activeDayFound = false;
+    let daysHtml = '';
 
     data.days.forEach((day, idx) => {
         const isHoliday = day.tasks.length === 1 && day.tasks[0].activity.includes("HOLIDAY");
 
-        // Use dynamic calculation if ad_date exists, otherwise fall back to static status
         let isCompleted = false;
         let isToday = false;
 
         if (day.ad_date) {
-            // Log for first few days to debug
-            if (idx < 3) console.log(`[DEBUG] Day ${idx} (${day.ad_date}) vs client (${clientDateStr})`);
-
             if (day.ad_date < clientDateStr) isCompleted = true;
             else if (day.ad_date === clientDateStr) isToday = true;
         } else {
-            // Fallback for old schedules
             isCompleted = day.status === 'completed';
             isToday = day.status === 'today';
         }
+
+        // VISIBILITY LOGIC: Show only TODAY unless expanded
+        if (!fullTimelineVisible && !isToday) return;
 
         // Dynamic Border Calculation
         let borderColor = 'rgba(255,255,255,0.1)';
@@ -309,8 +309,8 @@ function renderBlueprint(data) {
         // Add ID for auto-scroll if today
         const cardId = isToday ? 'active-day-card' : `day-card-${idx}`;
 
-        html += `
-        <div id="${cardId}" class="glass-card" style="${cardStyle}">
+        daysHtml += `
+        <div id="${cardId}" class="glass-card element-enter" style="${cardStyle}">
             <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                     <span style="opacity: 0.7;">${day.bs_date}</span>
@@ -336,9 +336,35 @@ function renderBlueprint(data) {
             </div>
         </div>`;
     });
+
+    // If no today found (future schedule), show first day
+    if (!fullTimelineVisible && daysHtml === '') {
+        // Recursive call with full view only if absolutely empty (edge case)
+        fullTimelineVisible = true;
+        renderBlueprint(data);
+        return;
+    }
+
+    html += daysHtml;
     html += `</div>`;
+
+    // Add floating toggle
+    if (!document.getElementById('btn-calendar-expand')) {
+        const fab = document.createElement('button');
+        fab.id = 'btn-calendar-expand';
+        fab.innerHTML = `<i data-lucide="${fullTimelineVisible ? 'minimize-2' : 'calendar'}"></i>`;
+        fab.onclick = toggleFullTimeline;
+        document.body.appendChild(fab);
+
+        // Hide on other views
+        const originalSwitch = switchView;
+        // Note: This monkey patching is risky, better handled in switchView directly
+    } else {
+        document.getElementById('btn-calendar-expand').innerHTML = `<i data-lucide="${fullTimelineVisible ? 'minimize-2' : 'calendar'}"></i>`;
+        document.getElementById('btn-calendar-expand').style.display = 'flex';
+    }
+
     dashContainer.innerHTML = html;
-    if (homeContainer) homeContainer.innerHTML = html;
     lucide.createIcons();
 
     // Auto-Scroll to Today
