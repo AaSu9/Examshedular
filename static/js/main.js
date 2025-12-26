@@ -292,15 +292,18 @@ function renderBlueprint(data) {
         else if (isToday) borderColor = 'var(--primary)';
 
         // Opacity for past days
-        const cardStyle = `padding: 2rem; border-color: ${borderColor}; ${isCompleted ? 'opacity: 0.5; filter: grayscale(1);' : ''} ${isToday ? 'box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);' : ''}`;
+        const cardStyle = `padding: 2rem; border-color: ${borderColor}; ${isCompleted ? 'opacity: 0.5; filter: grayscale(1);' : ''} ${isToday ? 'box-shadow: 0 0 30px rgba(139, 92, 246, 0.3); border-width: 2px;' : ''}`;
+
+        // Add ID for auto-scroll if today
+        const cardId = isToday ? 'active-day-card' : `day-card-${idx}`;
 
         html += `
-        <div class="glass-card" style="${cardStyle}">
+        <div id="${cardId}" class="glass-card" style="${cardStyle}">
             <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                     <span style="opacity: 0.7;">${day.bs_date}</span>
                     ${isCompleted ? '<span style="font-size: 0.7rem; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">DONE</span>' : ''}
-                    ${isToday ? '<span style="font-size: 0.7rem; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px;">TODAY</span>' : ''}
+                    ${isToday ? '<span style="font-size: 0.7rem; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; animation: pulseBadge 2s infinite;">TODAY</span>' : ''}
                 </div>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                     ${!isCompleted ? `<button class="control-btn" style="padding: 4px 8px; font-size: 0.7rem; height: auto;" onclick="editDayHours(${idx})">
@@ -325,6 +328,14 @@ function renderBlueprint(data) {
     dashContainer.innerHTML = html;
     if (homeContainer) homeContainer.innerHTML = html;
     lucide.createIcons();
+
+    // Auto-Scroll to Today
+    setTimeout(() => {
+        const todayEl = document.getElementById('active-day-card');
+        if (todayEl) {
+            todayEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 500);
 }
 
 let currentEditingDayIdx = null;
