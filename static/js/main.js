@@ -683,6 +683,9 @@ async function submitNeural() {
     localStorage.setItem('padsala_xp', focusXP);
     localStorage.setItem('padsala_streak', concentrationStreak);
 
+    // v17: Push to Server (Gamification)
+    syncXP();
+
     // Close Modals
     document.getElementById('neural-modal').classList.remove('active');
     document.getElementById('neural-input').value = ""; // Clear for next time
@@ -703,6 +706,69 @@ function updateStatsUI() {
     document.getElementById('stat-xp').innerText = focusXP;
     const rank = RANKS.slice().reverse().find(r => focusXP >= r.min)?.title || "INITIATE";
     document.getElementById('stat-rank').innerText = rank;
+}
+
+// SOCIAL ENGINE v17
+async function syncXP() {
+    if (!isLoggedIn) return;
+    try {
+        await fetch('/api/v17/sync-xp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ xp: focusXP, streak: concentrationStreak })
+        });
+    } catch (e) { console.error("XP Sync Fail", e); }
+}
+
+async function fetchLeaderboard() {
+    try {
+        const res = await fetch('/api/v17/leaderboard');
+        const data = await res.json();
+        renderLeaderboard(data.leaderboard, data.user_rank);
+        // Switch view if not already
+        // switchView('leaderboard') - purely called by UI button
+    } catch (e) {
+        console.error("LB Error", e);
+    }
+}
+
+function renderLeaderboard(users, myRank) {
+    const list = document.getElementById('leaderboard-list');
+    if (!list) return;
+
+    list.innerHTML = users.map((u, idx) => {
+        const isMe = u.username === currentUsername;
+        let medal = '';
+        if (idx === 0) medal = '🥇';
+        if (idx === 1) medal = '🥈';
+        if (idx === 2) medal = '🥉';
+
+        return `
+        <div class="glass-card" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; margin-bottom: 0.5rem; ${isMe ? 'border-color: var(--primary); background: rgba(139, 92, 246, 0.1);' : ''}">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="font-weight: 800; width: 30px; color: ${idx < 3 ? '#fbbf24' : 'grey'};">${medal || idx + 1}</div>
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                    ${u.username[0].toUpperCase()}
+                </div>
+                <div>
+                    <div style="font-weight: 700; ${u.is_pro ? 'color: #3b82f6;' : ''}">
+                        ${u.username} ${u.is_pro ? '⚡' : ''}
+                    </div>
+                    <div style="font-size: 0.7rem; opacity: 0.6;">Streak: ${u.streak} 🔥</div>
+                </div>
+            </div>
+            <div style="font-weight: 800; color: var(--primary);">${u.xp} XP</div>
+        </div>
+        `;
+    }).join('');
+
+    if (myRank > 10) {
+        list.innerHTML += `
+            <div style="text-align: center; padding: 1rem; opacity: 0.5; margin-top: 1rem;">
+                ... <br> You are Rank #${myRank}
+            </div>
+        `;
+    }
 }
 
 // YOUTUBE STREAM v17 (Distraction-Free)
@@ -889,6 +955,7 @@ const originalSwitchView = switchView;
 switchView = (viewId) => {
     originalSwitchView(viewId);
     if (viewId === 'analytics') fetchMirrorData();
+    if (viewId === 'leaderboard') fetchLeaderboard();
 };
 
 async function fetchMirrorData() {
