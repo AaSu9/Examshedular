@@ -409,7 +409,6 @@ setTimeout(() => {
         todayEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 }, 500);
-}
 
 let currentEditingDayIdx = null;
 
