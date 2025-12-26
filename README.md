@@ -1,111 +1,85 @@
-# ⚡ PADSALA (v16) | High-Performance Study Protocol
+# ⚡ PADSALA (v17) | Cognitive Discipline Engine
 
 ![UI Aesthetic](https://img.shields.io/badge/Aesthetic-Cyber--Zen-blueviolet)
-![Tech Stack](https://img.shields.io/badge/Tech-Flask%20%7C%20JS-blue)
+![Tech Stack](https://img.shields.io/badge/Tech-Flask%20%7C%20PWA-blue)
 ![Purpose](https://img.shields.io/badge/Purpose-Deep%20Focus-emerald)
 
-**Padsala** is an advanced academic planning engine designed to synchronize study habits with cognitive biological rhythms. It transforms traditional, static study schedules into a dynamic, immersive **Deep Focus Environment**.
+**Padsala** is an advanced academic planning architecture designed to synchronize study habits with cognitive biological rhythms. It acts not just as a scheduler, but as a **Cognitive Operating System** for students.
 
 ---
 
 ## 🚀 Vision
-In an era of digital noise, Padsala provides a "Technical Sanctuary" for students. By combining algorithmic schedule generation with a distraction-free learning interface, it allows students to enter a state of "Flow" and master complex subjects with surgical precision.
+Padsala provides a "Technical Sanctuary" for students. By combining algorithmic schedule generation with a biometrics-aware focus environment, it allows students to enter a state of "Flow" and master complex subjects with surgical precision.
 
-## ✨ Core Features
+### **Primary Architecture: Purbanchal University**
+The system is currently hard-wired for the **Purbanchal University (PoU)** academic structure, featuring a complete 8-semester syllabus database for Engineering and Technology faculties.
 
-### 1. 🧠 Algorithmic Blueprint engine
-*   **Context-Aware Planning**: Generates schedules based on specific University, Faculty, and Course metadata.
-*   **Temporal Mapping**: Calibrates study intensity based on exam dates and subject-specific difficulty levels.
-*   **Biological Synchronization**: Customizes sessions, breaks, and start times to match the user's peak performance windows.
+---
 
-### 2. 🛡️ The Vault (Immersive Focus Mode)
-*   **Cyber-Zen UI**: A high-end dark-room interface designed to minimize visual eye-strain and maximize concentration.
-*   **YouTube Topic Engine**: Integrated search and embed system to cover specific topics via video without the distractions of the main YouTube platform.
-*   **Neural Encoding**: A post-session reflection module that forces active recall of core concepts before closing the timer.
-*   **Focus DNA**: Gamified progression system with XP, streaks, and ranks (Student Monk → Superhuman Scholar).
+## ✨ v17 Features
 
-### 🎵 Distraction-Free Media
-*   **Integrated Music**: One-click access to Lo-Fi and Binaural focus beats.
-*   **Content Embedding**: Paste any YouTube link/topic to study course material directly within the Focus Command Center.
+### 1. 🧠 Adaptive Blueprint Engine
+*   **Micro-Planning**: Generates 15-minute granular study blocks.
+*   **Smart Status Logic**: Automatically tracks timeline progress using server-synchronized Nepal Time (UTC+5:45).
+*   **Visual History**: Past days are automatically dimmed and marked as **DONE**; the current day pulses with a neon indicators.
+*   **Mastery Adaptation**: Subject density automatically adjusts based on your self-reported mastery levels.
 
-### ❄️ Aesthetic Features
-*   **Glassmorphism Design**: Modern, premium UI tokens with backdrop blurs and noise textures.
-*   **Snow Particle System**: Atmospheric subtle movements to maintain a calm study environment.
-*   **Dynamic Transitions**: Fluid navigation between protocol steps.
+### 2. 🛡️ The Vault (Focus Galaxy)
+A distraction-free "Hard Focus" environment designed to force concentration.
+*   **Fullscreen Enforcement**: The system locks the interface to prevent tab-switching.
+*   **Tik-Tik Audio Engine**: A subconscious rhythmic metronome (Triangle Wave) that keeps the brain in a high-alert state.
+*   **Biometric Signaling**: 
+    *   **5-Minute Warning**: Distinct dual-tone alarm for the "Final Push".
+    *   **Session Termination**: Automated buzzer and fullscreen exit upon completion.
+*   **Neural Encoding**: A mandatory reflection phase that enforces active recall before unlocking the interface.
+
+### 3. 🪞 Mind Mirror (Analytics)
+*   **Cognitive Dashboard**: Visualizes "Flow States" and "Burnout Risk".
+*   **Knowledge Architecture**: Heatmap visualization of topic mastery across the entire 4-year degree.
+*   **Gamification**: XP System, Streaks, and Ranks (Initiate → Grandmaster).
+
+### 4. 🌩️ Technical Resilience
+*   **PWA Ready**: Works offline and installs as a native app on mobile devices.
+*   **Universal Responsiveness**: The interface fluidly adapts from 4K Desktops to Mobile Phones using a responsive grid stack.
+*   **Data Persistence**:  Automatic legacy migration ensures old schedules are retroactively patched with new logic.
 
 ---
 
 ## 🛠️ Technical Architecture
 
-### **Backend**
-*   **Python (Flask)**: Core application logic and API orchestration.
-*   **Planner Logic (`planner.py`)**: Distributed algorithms for calculating optimal study loads and task distributions.
-*   **Syllabus Engine (`syllabus_db.py`)**: Handles metadata injection and subject retrieval.
+### **Core Stack**
+*   **Backend**: Python (Flask) + SQLite (Self-Healing Schema).
+*   **Frontend**: Vanilla JS (ES6+) + CSS Variables (No external frameworks).
+*   **Audio**: Web Audio API (Oscillators for rhythm generation).
 
-### **Frontend**
-*   **Vanilla JavaScript**: Optimized, high-performance state management and YouTube API integration.
-*   **CSS System**: Custom variable-driven design with interactive animations and responsive grid layouts.
-*   **Lucide Icons**: Semantic iconography for a professional finish.
-
----
-
-## 📦 Installation & Setup
-
-### Prerequisites
-*   Python 3.8+
-*   Pip (Python Package Manager)
-
-### Installation Steps
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd "shedule maker"
-   ```
-
-2. **Set up a Virtual Environment** (Recommended):
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # Windows: .venv\Scripts\activate
-   ```
-
-3. **Install Dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Initialize Metadata**:
-   Ensure your syllabus SQLite database or metadata source is present in the project root.
-
-5. **Launch the Engine**:
-   ```bash
-   python app.py
-   ```
-6. **Access the Protocol**:
-   Open `http://localhost:5000` in your preferred high-performance browser.
+### **Key Modules**
+*   `planner.py`: The brain. Handles dates, difficulty weighting, and status logic.
+*   `db_init.py`: The memory. Seeds the comprehensive Purbanchal University syllabus.
+*   `main.js`: The nervous system. Handles biometrics, timers, and UI interactions.
 
 ---
 
-## 🎮 How to Use
-1.  **Initialize**: Click "Initialize Protocol" on the home screen.
-2.  **Calibrate**: Select your University, Faculty, and Semester. Choose your core subjects.
-3.  **Map**: Define your Exam Dates and assign a "Challenge Level" (Comfortable, Challenging, Intensive) to each.
-4.  **Execute**: Compute the Blueprint. Click on any task to enter **The Vault**.
-5.  **Focus**: Study with integrated YouTube media or focus music. Complete the "Neural Encoding" reflection once the timer hits zero.
+## 📦 Installation & Deployment
+
+### PythonAnywhere Deployment
+This system is optimized for **PythonAnywhere** hosting.
+1.  **Clone Repo**: `git clone <repo_url>`
+2.  **Initialize DB**: `python db_init.py`
+3.  **Deploy**: Reload the WSGI file.
+
+### Local Setup
+1.  **Install**: `pip install -r requirements.txt`
+2.  **Ignition**: `python app.py`
+3.  **Access**: `http://localhost:5000`
 
 ---
 
-## 📑 Project Structure
-```text
-├── app.py              # Main Flask Entry Point
-├── planner.py          # Schedule Generation Algorithms
-├── syllabus_db.py      # Metadata Management
-├── static/
-│   ├── css/style.css   # Premium Cyber-Zen Styling
-│   └── js/main.js      # Frontend Logic & YouTube Engine
-├── templates/
-│   └── index.html      # Immersive UI Template
-└── requirements.txt    # Project Dependencies
-```
+## 🎮 Operational Guide
+1.  **Initialize**: Select **Bachelor in Engineering (Computer/Civil/BIT)** and your target Semester (1-8).
+2.  **Calibrate**: Set your daily study hours and session duration.
+3.  **Execute**: The system generates a roadmap. Click a card to enter **The Vault**.
+4.  **Discipline**: Follow the **Tik-Tik** rhythm. Do not break focus until the buzzer sounds.
+5.  **Reflect**: Encode your learnings in the Neural Modal to gain XP.
 
 ---
 
