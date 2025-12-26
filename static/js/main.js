@@ -272,6 +272,13 @@ function renderBlueprint(data) {
 
     console.log(`[DEBUG] Client Date: ${clientDateStr}`);
 
+    if (!data || !data.days) {
+        console.warn("renderBlueprint: No data received");
+        dashContainer.innerHTML = `<div style="text-align:center; padding: 2rem; opacity: 0.5;">No schedule active. Initialize a protocol.</div>`;
+        if (homeContainer) homeContainer.innerHTML = "";
+        return;
+    }
+
     data.days.forEach((day, idx) => {
         const isHoliday = day.tasks.length === 1 && day.tasks[0].activity.includes("HOLIDAY");
 
@@ -907,13 +914,22 @@ class VoiceEngine {
             // 2. Fallback to Browser TTS
             if ('speechSynthesis' in window) {
                 const u = new SpeechSynthesisUtterance(text);
-                // Try to find a Hindi/Nepali voice if available, else standard
+                // Attempt to use a Hindi/Indian English voice for better Nepali accent approximation
                 const voices = window.speechSynthesis.getVoices();
-                const preferredVoice = voices.find(v => v.lang.includes('ne') || v.lang.includes('hi')) || voices[0];
-                if (preferredVoice) u.voice = preferredVoice;
+                // Prioritize Google Hindi or any Hindi voice
+                const preferredVoice = voices.find(v => v.name.includes('Google Hindi') || v.lang.includes('hi')) || voices[0];
+
+                if (preferredVoice) {
+                    u.voice = preferredVoice;
+                    // Hindi voice reads Nepali text reasonably well
+                    u.lang = 'hi-IN';
+                } else {
+                    u.lang = 'ne-NP';
+                }
 
                 u.volume = this.volume;
-                u.rate = 0.9;
+                u.rate = 0.85; // Slow, deliberate (Senior Dai style)
+                u.pitch = 0.9; // Slightly deep
                 window.speechSynthesis.speak(u);
             }
         });

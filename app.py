@@ -105,13 +105,16 @@ def get_schedules():
                         pass
                 
                 # Update Status on the fly based on ad_date
-                if 'ad_date' in day:
-                    if day['ad_date'] < today_ad_str:
-                        day['status'] = 'completed'
-                    elif day['ad_date'] == today_ad_str:
-                        day['status'] = 'today'
-                    else:
-                        day['status'] = 'upcoming'
+                try:
+                    if 'ad_date' in day:
+                        if day['ad_date'] < today_ad_str:
+                            day['status'] = 'completed'
+                        elif day['ad_date'] == today_ad_str:
+                            day['status'] = 'today'
+                        else:
+                            day['status'] = 'upcoming'
+                except Exception as e:
+                    print(f"Status update error: {e}")
 
         schedules.append({
             "name": row['name'],
