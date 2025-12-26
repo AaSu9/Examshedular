@@ -248,11 +248,11 @@ function resetPlan() {
     }
 }
 
-// DASHBOARD UI LOGIC
-let fullTimelineVisible = false;
+// DASHBOARD UI LOGIC v17
+let dashboardViewMode = 'focus'; // 'focus' | 'calendar'
 
-function toggleFullTimeline() {
-    fullTimelineVisible = !fullTimelineVisible;
+function setDashboardView(mode) {
+    dashboardViewMode = mode;
     renderBlueprint(currentSchedule);
 }
 
@@ -269,111 +269,146 @@ function renderBlueprint(data) {
     const dayDate = String(today.getDate()).padStart(2, '0');
     const clientDateStr = `${year}-${month}-${dayDate}`;
 
+    // 1. HEADER (Segmented Control)
     let html = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-            <h2>Master Timeline</h2>
+            <div class="view-toggle">
+                <button class="view-btn ${dashboardViewMode === 'focus' ? 'active' : ''}" onclick="setDashboardView('focus')">
+                    <i data-lucide="target" style="width: 16px; display:inline; vertical-align:middle; margin-right:4px;"></i> Focus
+                </button>
+                <button class="view-btn ${dashboardViewMode === 'calendar' ? 'active' : ''}" onclick="setDashboardView('calendar')">
+                    <i data-lucide="calendar" style="width: 16px; display:inline; vertical-align:middle; margin-right:4px;"></i> Calendar
+                </button>
+            </div>
+            
             <button class="control-btn" onclick="resetPlan()" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2)">
-                <i data-lucide="refresh-cw"></i> Reset Protocol
+                <i data-lucide="refresh-cw"></i> Reset
             </button>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 2rem;">`;
-
-    let activeDayFound = false;
-    let daysHtml = '';
-
-    data.days.forEach((day, idx) => {
-        const isHoliday = day.tasks.length === 1 && day.tasks[0].activity.includes("HOLIDAY");
-
-        let isCompleted = false;
-        let isToday = false;
-
-        if (day.ad_date) {
-            if (day.ad_date < clientDateStr) isCompleted = true;
-            else if (day.ad_date === clientDateStr) isToday = true;
-        } else {
-            isCompleted = day.status === 'completed';
-            isToday = day.status === 'today';
-        }
-
-        // VISIBILITY LOGIC: Show only TODAY unless expanded
-        if (!fullTimelineVisible && !isToday) return;
-
-        // Dynamic Border Calculation
-        let borderColor = 'rgba(255,255,255,0.1)';
-        if (day.is_exam_day) borderColor = '#ef4444';
-        else if (isToday) borderColor = 'var(--primary)';
-
-        // Opacity for past days
-        const cardStyle = `padding: 2rem; border-color: ${borderColor}; ${isCompleted ? 'opacity: 0.5; filter: grayscale(1);' : ''} ${isToday ? 'box-shadow: 0 0 30px rgba(139, 92, 246, 0.3); border-width: 2px;' : ''}`;
-
-        // Add ID for auto-scroll if today
-        const cardId = isToday ? 'active-day-card' : `day-card-${idx}`;
-
-        daysHtml += `
-        <div id="${cardId}" class="glass-card element-enter" style="${cardStyle}">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <span style="opacity: 0.7;">${day.bs_date}</span>
-                    ${isCompleted ? '<span style="font-size: 0.7rem; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">DONE</span>' : ''}
-                    ${isToday ? '<span style="font-size: 0.7rem; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; animation: pulseBadge 2s infinite;">TODAY</span>' : ''}
-                </div>
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    ${!isCompleted ? `<button class="control-btn" style="padding: 4px 8px; font-size: 0.7rem; height: auto;" onclick="editDayHours(${idx})">
-                        <i data-lucide="clock" style="width: 12px; height: 12px;"></i> Adjust
-                    </button>` : ''}
-                    <span style="font-weight: 700; color: #a78bfa;">${day.subject}</span>
-                </div>
-            </div>
-            <h3 style="margin-bottom: 1.5rem;">${day.daily_focus || 'Focus Session'}</h3>
-            <div id="day-tasks-${idx}">
-                ${day.tasks.map(t => `
-                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; ${isHoliday || isCompleted ? 'opacity: 0.7' : 'cursor: pointer;'}" 
-                         ${!isHoliday && !isCompleted ? `onclick="enterFocus('${day.subject}', '${t.activity.replace(/'/g, "\\'")}', ${t.minutes})"` : ''}>
-                        <span style="color: #d946ef; font-weight: 700; margin-right: 1rem;">${t.time}</span>
-                        ${t.activity}
-                    </div>
-                `).join('')}
-            </div>
         </div>`;
-    });
 
-    // If no today found (future schedule), show first day
-    if (!fullTimelineVisible && daysHtml === '') {
-        // Recursive call with full view only if absolutely empty (edge case)
-        fullTimelineVisible = true;
-        renderBlueprint(data);
-        return;
-    }
-
-    html += daysHtml;
-    html += `</div>`;
-
-    // Add floating toggle
-    if (!document.getElementById('btn-calendar-expand')) {
-        const fab = document.createElement('button');
-        fab.id = 'btn-calendar-expand';
-        fab.innerHTML = `<i data-lucide="${fullTimelineVisible ? 'minimize-2' : 'calendar'}"></i>`;
-        fab.onclick = toggleFullTimeline;
-        document.body.appendChild(fab);
-
-        // Hide on other views
-        const originalSwitch = switchView;
-        // Note: This monkey patching is risky, better handled in switchView directly
+    // 2. VIEW RENDERER
+    if (dashboardViewMode === 'calendar') {
+        html += renderCalendarGrid(data.days, clientDateStr);
     } else {
-        document.getElementById('btn-calendar-expand').innerHTML = `<i data-lucide="${fullTimelineVisible ? 'minimize-2' : 'calendar'}"></i>`;
-        document.getElementById('btn-calendar-expand').style.display = 'flex';
+        html += renderFocusCard(data.days, clientDateStr);
     }
 
     dashContainer.innerHTML = html;
-    lucide.createIcons();
 
-    // Auto-Scroll to Today
-    setTimeout(() => {
-        const todayEl = document.getElementById('active-day-card');
-        if (todayEl) {
-            todayEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Remove old FAB if exists
+    const oldFab = document.getElementById('btn-calendar-expand');
+    if (oldFab) oldFab.remove();
+
+    lucide.createIcons();
+}
+
+function renderCalendarGrid(days, clientDateStr) {
+    let gridHtml = `
+    <div class="calendar-wrapper">
+        <div class="calendar-header">
+            <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
+        </div>
+        <div class="calendar-grid">
+    `;
+
+    days.forEach((day, idx) => {
+        let isCompleted = false;
+        let isToday = false;
+        if (day.ad_date) {
+            if (day.ad_date < clientDateStr) isCompleted = true;
+            else if (day.ad_date === clientDateStr) isToday = true;
         }
-    }, 500);
+
+        const statusClass = isToday ? 'is-today' : (isCompleted ? 'is-completed' : '');
+        const examClass = day.is_exam_day ? 'is-exam' : '';
+
+        // Extract day number from AD date if possible, else BS
+        let dayNum = day.bs_date.split('-')[2];
+        if (day.ad_date) dayNum = day.ad_date.split('-')[2];
+
+        gridHtml += `
+            <div class="calendar-day ${statusClass} ${examClass}" onclick="editDayHours(${idx})">
+                <div class="cal-date">${dayNum}</div>
+                <div class="cal-subject">${day.subject}</div>
+                ${day.is_exam_day ? '<div style="font-size:0.6rem; color:#ef4444; font-weight:bold;">EXAM</div>' : ''}
+            </div>
+        `;
+    });
+
+    gridHtml += `</div></div>`;
+    return gridHtml;
+}
+
+function renderFocusCard(days, clientDateStr) {
+    let html = `<div style="display: grid; place-items: center;">`;
+    let activeDay = null;
+    let activeIdx = -1;
+
+    // Find Today
+    days.forEach((day, idx) => {
+        if (day.ad_date === clientDateStr) {
+            activeDay = day;
+            activeIdx = idx;
+        }
+    });
+
+    // Fallback: If today not found (e.g., schedule ended), show last day or a message
+    if (!activeDay) {
+        // Try finding first upcoming
+        activeDay = days.find(d => d.ad_date > clientDateStr);
+        if (!activeDay) {
+            return `<div style="text-align:center; padding: 4rem; opacity:0.5;">Protocol Completed. <br>Relax.</div>`;
+        }
+        activeIdx = days.indexOf(activeDay);
+    }
+
+    const day = activeDay;
+    const isHoliday = day.tasks.length === 1 && day.tasks[0].activity.includes("HOLIDAY");
+
+    html += `
+        <div class="glass-card element-enter" style="width: 100%; max-width: 600px; padding: 2.5rem; border: 2px solid var(--primary); box-shadow: 0 0 40px rgba(139, 92, 246, 0.2);">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div style="font-size: 0.9rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">Current Protocol</div>
+                <h2 style="font-size: 2.5rem; margin: 0; color: white;">${day.bs_date}</h2>
+                <div style="color: #a78bfa; font-weight: 700; font-size: 1.2rem; margin-top: 0.5rem;">${day.subject}</div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                ${day.tasks.map(t => `
+                    <div style="background: rgba(255,255,255,0.05); padding: 1.2rem; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; ${isHoliday ? 'opacity: 0.7' : 'cursor: pointer; transition: transform 0.2s;'}" 
+                         ${!isHoliday ? `onclick="enterFocus('${day.subject}', '${t.activity.replace(/'/g, "\\'")}', ${t.minutes})"` : ''}
+                         onmouseover="this.style.background='rgba(255,255,255,0.1)'; this.style.transform='scale(1.02)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.transform='scale(1)'">
+                        
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="font-weight: 700; font-size: 1.1rem;">${t.activity}</span>
+                            <span style="font-size: 0.8rem; opacity: 0.6;">${t.type.toUpperCase()}</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: #d946ef; font-weight: 700;">${t.time}</div>
+                            <div style="font-size: 0.8rem; opacity: 0.6;">${t.minutes}m</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            
+             <div style="margin-top: 2rem; text-align: center;">
+                 <button class="control-btn" onclick="editDayHours(${activeIdx})" style="font-size: 0.8rem;">
+                    <i data-lucide="clock"></i> Adjust Schedule
+                </button>
+             </div>
+        </div>
+    </div>`;
+
+    return html;
+}
+// Auto-Scroll to Today
+setTimeout(() => {
+    const todayEl = document.getElementById('active-day-card');
+    if (todayEl) {
+        todayEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}, 500);
 }
 
 let currentEditingDayIdx = null;
