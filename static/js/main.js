@@ -527,30 +527,46 @@ function updateTimerUI() {
 }
 
 // AUDIO ENGINE v17
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let audioCtx = null;
+
+function getAudioCtx() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioCtx;
+}
+
 function playTone(freq, type, duration) {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
     osc.type = type;
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.3, audioCtx.currentTime); // Louder (0.3)
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+    gain.gain.setValueAtTime(0.3, ctx.currentTime); // Louder (0.3)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
     osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    gain.connect(ctx.destination);
+
     osc.start();
-    osc.stop(audioCtx.currentTime + duration);
+    osc.stop(ctx.currentTime + duration);
 }
 
 function toggleTimer() {
     const btn = document.getElementById('btn-play-pause');
+    const ctx = getAudioCtx(); // Lazy loading
+
     if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;
         btn.innerHTML = `<i data-lucide="play"></i> Resume`;
         document.getElementById('bar-play-icon').setAttribute('data-lucide', 'play');
     } else {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (ctx.state === 'suspended') ctx.resume();
 
         timerInterval = setInterval(() => {
             if (secondsRemaining > 0) {
@@ -565,6 +581,7 @@ function toggleTimer() {
                     playTone(600, 'square', 0.2);
                     setTimeout(() => playTone(600, 'square', 0.2), 300);
                     triggerFocusWarning("5 Minutes Remaining - Final Push!");
+                    voiceSystem.trigger('warning_5m');
                 }
 
                 // Track Idle Time
