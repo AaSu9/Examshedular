@@ -975,8 +975,9 @@ class VoiceEngine {
 
     speak(key, text) {
         // Resume Audio Context if suspended (Browser Policy Fix)
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume().then(() => this._playAudio(key, text));
+        const ctx = getAudioCtx();
+        if (ctx.state === 'suspended') {
+            ctx.resume().then(() => this._playAudio(key, text));
         } else {
             this._playAudio(key, text);
         }
@@ -1015,7 +1016,8 @@ class VoiceEngine {
 
     // Call this on first user interaction
     warmup() {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const ctx = getAudioCtx();
+        if (ctx.state === 'suspended') ctx.resume();
         // Silent TTS warmup to load voices
         if ('speechSynthesis' in window) window.speechSynthesis.getVoices();
     }
