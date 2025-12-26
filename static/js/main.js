@@ -270,6 +270,8 @@ function renderBlueprint(data) {
     const dayDate = String(today.getDate()).padStart(2, '0');
     const clientDateStr = `${year}-${month}-${dayDate}`; // 2025-12-25
 
+    console.log(`[DEBUG] Client Date: ${clientDateStr}`);
+
     data.days.forEach((day, idx) => {
         const isHoliday = day.tasks.length === 1 && day.tasks[0].activity.includes("HOLIDAY");
 
@@ -278,6 +280,9 @@ function renderBlueprint(data) {
         let isToday = false;
 
         if (day.ad_date) {
+            // Log for first few days to debug
+            if (idx < 3) console.log(`[DEBUG] Day ${idx} (${day.ad_date}) vs client (${clientDateStr})`);
+
             if (day.ad_date < clientDateStr) isCompleted = true;
             else if (day.ad_date === clientDateStr) isToday = true;
         } else {
@@ -884,20 +889,41 @@ class VoiceEngine {
     }
 
     speak(key, text) {
+        // Resume Audio Context if suspended (Browser Policy Fix)
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume().then(() => this._playAudio(key, text));
+        } else {
+            this._playAudio(key, text);
+        }
+    }
+
+    _playAudio(key, text) {
         // 1. Try playing OGG file first (Preferred)
         const audio = new Audio(`/static/audio/voi_${key}_${this.mode}.ogg`);
         audio.volume = this.volume;
 
         audio.play().catch(e => {
-            // 2. Fallback to Browser TTS (Behavioral Safety Net)
-            const u = new SpeechSynthesisUtterance(text);
-            u.lang = 'ne-NP'; // Try Nepali
-            // If Nepali not installed, it might use fallback voice, which is acceptable for v1
-            u.volume = this.volume;
-            u.rate = 0.9;
-            u.pitch = 0.8;
-            window.speechSynthesis.speak(u);
+            console.warn("Audio file missing, using TTS fallback", e);
+            // 2. Fallback to Browser TTS
+            if ('speechSynthesis' in window) {
+                const u = new SpeechSynthesisUtterance(text);
+                // Try to find a Hindi/Nepali voice if available, else standard
+                const voices = window.speechSynthesis.getVoices();
+                const preferredVoice = voices.find(v => v.lang.includes('ne') || v.lang.includes('hi')) || voices[0];
+                if (preferredVoice) u.voice = preferredVoice;
+
+                u.volume = this.volume;
+                u.rate = 0.9;
+                window.speechSynthesis.speak(u);
+            }
         });
+    }
+
+    // Call this on first user interaction
+    warmup() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        // Silent TTS warmup to load voices
+        if ('speechSynthesis' in window) window.speechSynthesis.getVoices();
     }
 
     // UI Controls
