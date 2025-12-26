@@ -302,6 +302,25 @@ function renderBlueprint(data) {
     lucide.createIcons();
 }
 
+const SUBJECT_COLORS = [
+    '#d946ef', // Pink
+    '#06b6d4', // Cyan
+    '#f97316', // Orange
+    '#eab308', // Yellow
+    '#3b82f6', // Blue
+    '#8b5cf6'  // Purple
+];
+
+function getSubjectColor(subject) {
+    if (!subject) return '#a78bfa';
+    let hash = 0;
+    for (let i = 0; i < subject.length; i++) {
+        hash = subject.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const idx = Math.abs(hash) % SUBJECT_COLORS.length;
+    return SUBJECT_COLORS[idx];
+}
+
 function renderCalendarGrid(days, clientDateStr) {
     let gridHtml = `
     <div class="calendar-wrapper">
@@ -321,16 +340,23 @@ function renderCalendarGrid(days, clientDateStr) {
 
         const statusClass = isToday ? 'is-today' : (isCompleted ? 'is-completed' : '');
         const examClass = day.is_exam_day ? 'is-exam' : '';
+        const subColor = getSubjectColor(day.subject);
 
         // Extract day number from AD date if possible, else BS
         let dayNum = day.bs_date.split('-')[2];
         if (day.ad_date) dayNum = day.ad_date.split('-')[2];
 
+        // Green for Exams (User Request)
+        const examIndicator = day.is_exam_day
+            ? `<div style="font-size:0.6rem; color:#22c55e; font-weight:800; text-shadow: 0 0 10px rgba(34, 197, 94, 0.4);">EXAM DAY</div>`
+            : '';
+
         gridHtml += `
-            <div class="calendar-day ${statusClass} ${examClass}" onclick="editDayHours(${idx})">
-                <div class="cal-date">${dayNum}</div>
-                <div class="cal-subject">${day.subject}</div>
-                ${day.is_exam_day ? '<div style="font-size:0.6rem; color:#ef4444; font-weight:bold;">EXAM</div>' : ''}
+            <div class="calendar-day ${statusClass} ${examClass}" onclick="editDayHours(${idx})" 
+                 style="${day.is_exam_day ? 'border-color: #22c55e; background: rgba(34, 197, 94, 0.1);' : ''}">
+                <div class="cal-date" style="${isToday ? '' : 'opacity:0.6'}">${dayNum}</div>
+                <div class="cal-subject" style="color: ${subColor};">${day.subject}</div>
+                ${examIndicator}
             </div>
         `;
     });
