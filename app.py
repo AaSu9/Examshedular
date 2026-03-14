@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 from planner import generate_study_plan
 from syllabus_db import get_all_metadata, get_chapters, get_db_connection
 import nepali_datetime
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
@@ -279,7 +279,7 @@ def admin_reset_password():
     hashed = generate_password_hash(new_password)
     
     conn = get_db_connection()
-    conn.execute('UPDATE users SET password = ? WHERE id = ?', (hashed, target_id))
+    conn.execute('UPDATE users SET password_hash = ? WHERE id = ?', (hashed, target_id))
     conn.commit()
     conn.close()
     return jsonify({"success": True})
