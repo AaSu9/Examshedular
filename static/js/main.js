@@ -80,7 +80,8 @@ async function initWizard() {
 
         // Initial View Determination
         if (savedSchedules.length > 0) {
-            currentSchedule = savedSchedules[0];
+            currentSchedule = savedSchedules[0].data;
+            wizardInputs = savedSchedules[0].inputs || {};
             renderGallery();
             renderBlueprint(currentSchedule);
             // Land on Dashboard only if there's no "current session" in Home
@@ -124,8 +125,9 @@ function updateSemesters() {
     const u = document.getElementById('select-university').value;
     const f = document.getElementById('select-faculty').value;
     const c = document.getElementById('select-course').value;
-    const filtered = Object.keys(db[u]?.[f]?.[c] || {}).filter(s => !s.startsWith('Elective'));
-    populateDropdown('select-semester', filtered);
+    // v18: No longer filtering electives, they are now first-class subjects
+    const allSems = Object.keys(db[u]?.[f]?.[c] || {});
+    populateDropdown('select-semester', allSems);
     updateSubjects();
 }
 
@@ -137,18 +139,65 @@ function updateSubjects() {
 
     if (u && f && c && s && db[u]?.[f]?.[c]?.[s]) {
         document.getElementById('subject-selection-zone').style.display = 'block';
-        const subjects = Object.keys(db[u][f][c][s]);
-        document.getElementById('subjects-grid').innerHTML = subjects.map(name => `
-            <div class="glass-card" style="padding: 1rem; cursor: pointer; border: 1px solid ${selectedSubjects.includes(name) ? '#8b5cf6' : 'rgba(255,255,255,0.1)'}" onclick="toggleSubject(this, '${name}')">
-                <span style="font-weight: 600;">${name}</span>
-            </div>
-        `).join('');
+        const subjects = db[u][f][c][s];
+        document.getElementById('subjects-grid').innerHTML = Object.keys(subjects).map(name => {
+            const info = subjects[name];
+            const isSelected = selectedSubjects.some(sub => sub.name === name);
+            const subObj = selectedSubjects.find(sub => sub.name === name) || { difficulty: info.difficulty || 2 };
+            
+            return `
+                <div class="glass-card subject-card ${isSelected ? 'selected' : ''}" 
+                     style="padding: 1.2rem; border: 1px solid ${isSelected ? 'var(--primary)' : 'var(--glass-border)'}; position: relative; transition: all 0.3s;"
+                     onclick="toggleSubject(event, '${name.replace(/'/g, "\\'")}', ${info.difficulty})">
+                    <div style="font-weight: 700; margin-bottom: 0.8rem; color: ${isSelected ? 'var(--primary)' : 'inherit'}">${name}</div>
+                    
+                    <div class="difficulty-picker" onclick="event.stopPropagation()" style="display: flex; gap: 4px;">
+                        ${[1, 2, 3].map(d => `
+                            <div onclick="setSubDifficulty('${name.replace(/'/g, "\\'")}', ${d})" 
+                                 style="flex: 1; height: 6px; border-radius: 3px; background: ${subObj.difficulty >= d ? (d === 3 ? '#ef4444' : d === 2 ? '#fbbf24' : '#22c55e') : '#e2e8f0'}; cursor: pointer;">
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="font-size: 0.65rem; margin-top: 4px; opacity: 0.6; display: flex; justify-content: space-between;">
+                        <span>LEVEL: ${subObj.difficulty === 3 ? 'HARD' : subObj.difficulty === 2 ? 'MED' : 'EASY'}</span>
+                        ${info.is_elective ? '<span style="color: #d946ef;">ELECTIVE</span>' : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 }
 
-function toggleSubject(el, name) {
-    if (selectedSubjects.includes(name)) selectedSubjects = selectedSubjects.filter(s => s !== name);
-    else selectedSubjects.push(name);
+function setSubDifficulty(name, diff) {
+    const sub = selectedSubjects.find(s => s.name === name);
+    if (sub) {
+        sub.difficulty = diff;
+    } else {
+        // Find in DB to get elective info
+        const u = document.getElementById('select-university').value;
+        const f = document.getElementById('select-faculty').value;
+        const c = document.getElementById('select-course').value;
+        const s = document.getElementById('select-semester').value;
+        const info = db[u][f][c][s][name];
+        selectedSubjects.push({ name, difficulty: diff, is_elective: info.is_elective });
+    }
+    updateSubjects();
+}
+
+function toggleSubject(event, name, defaultDiff) {
+    if (event.target.closest('.difficulty-picker')) return;
+    
+    const existingIdx = selectedSubjects.findIndex(s => s.name === name);
+    if (existingIdx !== -1) {
+        selectedSubjects.splice(existingIdx, 1);
+    } else {
+        const u = document.getElementById('select-university').value;
+        const f = document.getElementById('select-faculty').value;
+        const c = document.getElementById('select-course').value;
+        const s = document.getElementById('select-semester').value;
+        const info = db[u][f][c][s][name];
+        selectedSubjects.push({ name, difficulty: info.difficulty || defaultDiff || 2, is_elective: info.is_elective });
+    }
     updateSubjects();
 }
 
@@ -156,9 +205,12 @@ function prepareDateInputs() {
     navigateTo(3);
     const container = document.getElementById('exam-date-inputs');
     container.innerHTML = selectedSubjects.map(s => `
-        <div class="glass-card" style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
-            <span style="font-weight: 700;">${s}</span>
-            <input type="text" class="exam-date-input" data-subject="${s}" value="2082-09-15" style="width: 200px;">
+        <div class="glass-card" style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; border: 1px solid #e2e8f0; background: white; border-radius: 16px;">
+            <div>
+                <div style="font-weight: 800; font-size: 1.1rem;">${s.name}</div>
+                <div style="font-size: 0.75rem; opacity: 0.6;">DIFF: ${s.difficulty === 3 ? 'HARD' : s.difficulty === 2 ? 'MED' : 'EASY'}</div>
+            </div>
+            <input type="text" class="exam-date-input" data-subject="${s.name}" data-difficulty="${s.difficulty}" value="2083-09-15" style="width: 180px;">
         </div>
     `).join('');
 }
@@ -167,7 +219,7 @@ async function generateSchedule() {
     const exams = Array.from(document.querySelectorAll('.exam-date-input')).map(i => ({
         name: i.dataset.subject,
         date: i.value,
-        difficulty: 2
+        difficulty: parseInt(i.dataset.difficulty)
     }));
 
     try {
@@ -848,7 +900,13 @@ async function handleAuth(type) {
                 updateAuthUI();
                 await syncSchedules();
                 closeAuthModal();
-                location.reload(); // Refresh to clean state
+                
+                // v18: Handle Admin Redirect
+                if (data.redirect) {
+                    location.href = data.redirect;
+                } else {
+                    location.reload(); 
+                }
             } else {
                 alert("Account initialized! Please login.");
                 toggleAuthForm('login');
