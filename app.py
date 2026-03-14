@@ -56,7 +56,19 @@ def login():
         if user and check_password_hash(user['password_hash'], password):
             session['user_id'] = user['id']
             session['username'] = user['username']
-            return jsonify({"success": True, "user": {"username": user['username']}})
+            
+            # v18: Update last login
+            conn = get_db_connection()
+            conn.execute('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', (user['id'],))
+            conn.commit()
+            conn.close()
+
+            is_admin = (user['username'] == 'Aashish Ghimire')
+            return jsonify({
+                "success": True, 
+                "user": {"username": user['username'], "is_admin": is_admin},
+                "redirect": "/admin" if is_admin else None
+            })
             
         return jsonify({"error": "Invalid credentials"}), 401
     except Exception as e:
@@ -298,6 +310,77 @@ def admin_delete_user():
     conn.execute('DELETE FROM saved_schedules WHERE user_id = ?', (target_id,))
     # Delete user
     conn.execute('DELETE FROM users WHERE id = ?', (target_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+# --- v18 DB MANAGEMENT APIS ---
+@app.route('/admin/api/syllabus/add-subject', methods=['POST'])
+def admin_add_subject():
+    if 'user_id' not in session or session.get('username') != 'Aashish Ghimire':
+        return jsonify({"error": "Forbidden"}), 403
+    
+    data = request.json
+    name = data.get('name')
+    semester_id = data.get('semester_id')
+    difficulty = data.get('difficulty', 2)
+    is_elective = data.get('is_elective', 0)
+    
+    if not name or not semester_id:
+        return jsonify({"error": "Missing name or semester_id"}), 400
+        
+    conn = get_db_connection()
+    conn.execute('INSERT INTO subjects (name, semester_id, base_difficulty, is_elective) VALUES (?, ?, ?, ?)', 
+                 (name, semester_id, difficulty, is_elective))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+@app.route('/admin/api/syllabus/update-subject', methods=['POST'])
+def admin_update_subject():
+    if 'user_id' not in session or session.get('username') != 'Aashish Ghimire':
+        return jsonify({"error": "Forbidden"}), 403
+    
+    data = request.json
+    sub_id = data.get('id')
+    name = data.get('name')
+    difficulty = data.get('difficulty')
+    is_elective = data.get('is_elective')
+    
+    conn = get_db_connection()
+    conn.execute('UPDATE subjects SET name = ?, base_difficulty = ?, is_elective = ? WHERE id = ?', 
+                 (name, difficulty, is_elective, sub_id))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+@app.route('/admin/api/syllabus/add-chapter', methods=['POST'])
+def admin_add_chapter():
+    if 'user_id' not in session or session.get('username') != 'Aashish Ghimire':
+        return jsonify({"error": "Forbidden"}), 403
+    
+    data = request.json
+    name = data.get('name')
+    subject_id = data.get('subject_id')
+    
+    if not name or not subject_id:
+        return jsonify({"error": "Missing name or subject_id"}), 400
+        
+    conn = get_db_connection()
+    conn.execute('INSERT INTO chapters (name, subject_id) VALUES (?, ?)', (name, subject_id))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+@app.route('/admin/api/syllabus/delete-subject', methods=['POST'])
+def admin_delete_subject():
+    if 'user_id' not in session or session.get('username') != 'Aashish Ghimire':
+        return jsonify({"error": "Forbidden"}), 403
+    
+    sub_id = request.json.get('id')
+    conn = get_db_connection()
+    conn.execute('DELETE FROM chapters WHERE subject_id = ?', (sub_id,))
+    conn.execute('DELETE FROM subjects WHERE id = ?', (sub_id,))
     conn.commit()
     conn.close()
     return jsonify({"success": True})

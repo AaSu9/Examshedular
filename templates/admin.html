@@ -7,10 +7,19 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        :root {
+            --bg-deep: #f8fafc;
+            --surface: #ffffff;
+            --primary: #2563eb;
+            --text-main: #0f172a;
+        }
+
         body {
             padding: 3rem 4rem;
             max-width: 1400px;
             margin: 0 auto;
+            background: var(--bg-deep);
+            color: var(--text-main);
         }
 
         .admin-table {
@@ -27,55 +36,88 @@
             text-transform: uppercase;
             font-size: 0.75rem;
             letter-spacing: 1.5px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 2px solid #e2e8f0;
         }
 
         .admin-table td {
             padding: 1.2rem;
-            background: rgba(255, 255, 255, 0.03);
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: var(--surface);
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
 
         .admin-table tr td:first-child {
-            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            border-left: 1px solid #e2e8f0;
             border-radius: 12px 0 0 12px;
         }
 
         .admin-table tr td:last-child {
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            border-right: 1px solid #e2e8f0;
             border-radius: 0 12px 12px 0;
         }
 
         .search-bar {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             padding: 0.8rem 1.2rem;
             border-radius: 12px;
-            color: white;
+            color: var(--text-main);
             width: 300px;
             transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
         .search-bar:focus {
             outline: none;
             border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .admin-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 1rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+        
+        input, select {
+            color: #000 !important;
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
         }
     </style>
 </head>
 
 <body class="galaxy-bg">
-    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem;">
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
         <div>
-            <h1 class="text-gradient" style="font-size: 2.5rem; margin-bottom: 0.5rem;">High Command</h1>
-            <p style="opacity: 0.6; display: flex; align-items: center; gap: 0.5rem;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; color: var(--primary); font-weight: 900;">High Command</h1>
+            <p style="opacity: 0.6; display: flex; align-items: center; gap: 0.5rem; color: #64748b;">
                 <i data-lucide="shield-check" style="width: 16px; color: var(--primary);"></i>
                 Imperial Overseer Dashboard
             </p>
         </div>
         <div style="display: flex; gap: 1rem;">
-            <a href="/" class="control-btn" style="text-decoration: none;">
+            <a href="/" class="control-btn" style="text-decoration: none; background: white; border: 1px solid #e2e8f0; color: #000;">
                 <i data-lucide="home"></i> Bridge
             </a>
             <button class="btn-primary" onclick="location.reload()">
@@ -84,98 +126,225 @@
         </div>
     </header>
 
-    <div style="display: grid; grid-template-columns: 350px 1fr; gap: 2.5rem; margin-bottom: 4rem;">
-        <!-- Deploy Recruit -->
-        <div class="glass-card" style="padding: 2.5rem; border-color: rgba(139, 92, 246, 0.2);">
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-                <div style="background: rgba(139, 92, 246, 0.1); padding: 10px; border-radius: 12px;">
-                    <i data-lucide="user-plus" style="color: var(--primary);"></i>
+    <div class="admin-tabs">
+        <button class="tab-btn active" onclick="switchTab('recruits')">User Directory</button>
+        <button class="tab-btn" onclick="switchTab('database')">Database Management</button>
+    </div>
+
+    <!-- RECRUITS TAB -->
+    <div id="tab-recruits" class="tab-panel">
+        <div style="display: grid; grid-template-columns: 350px 1fr; gap: 2.5rem; margin-bottom: 4rem;">
+            <!-- Deploy Recruit -->
+            <div class="glass-card" style="padding: 2.5rem; background: white; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: #eff6ff; padding: 10px; border-radius: 12px;">
+                        <i data-lucide="user-plus" style="color: var(--primary);"></i>
+                    </div>
+                    <h3 style="margin: 0; color: var(--primary);">Deploy Recruit</h3>
                 </div>
-                <h3 style="margin: 0; color: var(--primary);">Deploy Recruit</h3>
-            </div>
-            
-            <div class="input-group">
-                <input type="text" id="new-username" class="stream-input" placeholder=" " required>
-                <label class="input-label">Username</label>
+                
+                <div class="input-group">
+                    <input type="text" id="new-username" class="stream-input" placeholder=" " required>
+                    <label class="input-label">Username</label>
+                </div>
+
+                <div class="input-group">
+                    <input type="password" id="new-password" class="stream-input" placeholder=" " required>
+                    <label class="input-label">Access Key</label>
+                </div>
+
+                <button class="btn-primary" onclick="generateUser()" style="width: 100%; justify-content: center; margin-top: 1.5rem;">
+                    Deploy Identity
+                </button>
             </div>
 
-            <div class="input-group">
-                <input type="password" id="new-password" class="stream-input" placeholder=" " required>
-                <label class="input-label">Access Key</label>
+            <!-- Global Analytics -->
+            <div class="glass-card" style="padding: 2.5rem; background: white; display: flex; align-items: center; justify-content: space-around; border: 1px solid #e2e8f0; border-radius: 20px;">
+                <div style="text-align: center;">
+                    <p style="margin: 0; opacity: 0.5; font-size: 0.75rem; text-transform: uppercase;">Total Recruits</p>
+                    <div style="font-size: 3.5rem; font-weight: 900; color: var(--primary);">{{ users|length }}</div>
+                </div>
+                <div style="height: 60px; width: 1px; background: #e2e8f0;"></div>
+                <div style="text-align: center;">
+                    <p style="margin: 0; opacity: 0.5; font-size: 0.75rem; text-transform: uppercase;">Active Timelines</p>
+                    <div style="font-size: 3.5rem; font-weight: 900; color: #ec4899;">{{ total_schedules }}</div>
+                </div>
             </div>
-
-            <button class="btn-primary" onclick="generateUser()" style="width: 100%; justify-content: center; margin-top: 1.5rem;">
-                Deploy Identity
-            </button>
         </div>
 
-        <!-- Global Analytics -->
-        <div class="glass-card" style="padding: 2.5rem; display: flex; align-items: center; justify-content: space-around;">
-            <div style="text-align: center;">
-                <p style="margin: 0; opacity: 0.5; font-size: 0.75rem; text-transform: uppercase;">Total Recruits</p>
-                <div style="font-size: 3.5rem; font-weight: 900; color: var(--primary); filter: drop-shadow(0 0 10px rgba(139,92,246,0.3));">{{ users|length }}</div>
-            </div>
-            <div style="height: 60px; width: 1px; background: rgba(255,255,255,0.1);"></div>
-            <div style="text-align: center;">
-                <p style="margin: 0; opacity: 0.5; font-size: 0.75rem; text-transform: uppercase;">Active Timelines</p>
-                <div style="font-size: 3.5rem; font-weight: 900; color: #ec4899; filter: drop-shadow(0 0 10px rgba(236,72,153,0.3));">{{ total_schedules }}</div>
-            </div>
-            <div style="height: 60px; width: 1px; background: rgba(255,255,255,0.1);"></div>
-            <div style="text-align: center;">
-                <p style="margin: 0; opacity: 0.5; font-size: 0.75rem; text-transform: uppercase;">System Health</p>
-                <div style="color: #22c55e; font-weight: 800; font-size: 1.2rem; margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
-                    <span class="pulse-dot" style="background: #22c55e;"></span> OPTIMAL
+        <div class="glass-card" style="padding: 2.5rem; background: white; border: 1px solid #e2e8f0; border-radius: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
+                <h2 style="margin: 0; font-size: 1.8rem;">Recruit Directory</h2>
+                <div style="position: relative;">
+                    <i data-lucide="search" style="position: absolute; left: 1rem; top: 1rem; width: 16px; opacity: 0.5;"></i>
+                    <input type="text" class="search-bar" placeholder="Search mission ID..." style="padding-left: 3rem;" 
+                           onkeyup="filterUsers(this.value)">
                 </div>
             </div>
+
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Mission ID</th>
+                        <th>Registry Date</th>
+                        <th>Status</th>
+                        <th>Operations</th>
+                    </tr>
+                </thead>
+                <tbody id="user-tbody">
+                    {% for user in users %}
+                    <tr id="user-row-{{ user.id }}">
+                        <td style="font-weight: 700;">@{{ user.username }}</td>
+                        <td style="opacity: 0.6; font-size: 0.8rem;">{{ user.created_at }}</td>
+                        <td>
+                            <span style="background: #eff6ff; color: var(--primary); padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.7rem;">
+                                {{ user.timeline_count }} ACTIVE TIMELINES
+                            </span>
+                        </td>
+                        <td style="display: flex; gap: 0.5rem;">
+                            <button class="control-btn" data-id="{{ user.id }}" data-username="@{{ user.username }}" onclick="handleReset(this)" style="background: #f8fafc; border: 1px solid #e2e8f0; color: #000;">
+                                <i data-lucide="key" style="width: 14px;"></i> Key Reset
+                            </button>
+                            <button class="control-btn" data-id="{{ user.id }}" data-username="@{{ user.username }}" onclick="handleWipe(this)" style="color: #ef4444; border: 1px solid #fee2e2; background: #fef2f2;">
+                                <i data-lucide="user-x" style="width: 14px;"></i> Wipe
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- User Directory -->
-    <div class="glass-card" style="padding: 2.5rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
-            <h2 style="margin: 0; font-size: 1.8rem;">Recruit Directory</h2>
-            <div style="position: relative;">
-                <i data-lucide="search" style="position: absolute; left: 1rem; top: 1rem; width: 16px; opacity: 0.5;"></i>
-                <input type="text" class="search-bar" placeholder="Search mission ID..." style="padding-left: 3rem;" 
-                       onkeyup="filterUsers(this.value)">
+    <!-- DATABASE TAB -->
+    <div id="tab-database" class="tab-panel" style="display: none;">
+        <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 2.5rem;">
+            <!-- Add Subject -->
+            <div class="glass-card" style="padding: 2rem; background: white; border-radius: 20px; border: 1px solid #e2e8f0;">
+                <h3 style="color: var(--primary); margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="book-open"></i> Add Subject
+                </h3>
+                <div style="margin-top: 1.5rem;">
+                    <label>Select Semester ID</label>
+                    <input type="number" id="db-semester-id" placeholder="Semester Database ID" style="margin-bottom: 1rem;">
+                    
+                    <label>Subject Name</label>
+                    <input type="text" id="db-subject-name" placeholder="E.g. Engineering Mathematics I" style="margin-bottom: 1rem;">
+                    
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="flex: 1;">
+                            <label>Difficulty</label>
+                            <select id="db-subject-diff">
+                                <option value="1">Easy (1)</option>
+                                <option value="2" selected>Medium (2)</option>
+                                <option value="3">Hard (3)</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label>Type</label>
+                            <select id="db-subject-elective">
+                                <option value="0" selected>Core Subject</option>
+                                <option value="1">Elective</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-primary" onclick="dbAddSubject()" style="width: 100%; justify-content: center;">
+                        Save to Registry
+                    </button>
+                </div>
+            </div>
+
+            <!-- Subject List & Chapters -->
+            <div class="glass-card" style="padding: 2rem; background: white; border-radius: 20px; border: 1px solid #e2e8f0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0;">Syllabus Management</h3>
+                    <button class="control-btn" onclick="fetchMetadataForAdmin()" style="font-size: 0.75rem;">
+                        <i data-lucide="refresh-cw" style="width: 12px;"></i> Load Data
+                    </button>
+                </div>
+                
+                <div id="admin-syllabus-tree" style="max-height: 600px; overflow-y: auto;">
+                    <p style="opacity: 0.5; text-align: center;">Click "Load Data" to view syllabus tree.</p>
+                </div>
             </div>
         </div>
-
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Mission ID</th>
-                    <th>Registry Date</th>
-                    <th>Status</th>
-                    <th>Operations</th>
-                </tr>
-            </thead>
-            <tbody id="user-tbody">
-                {% for user in users %}
-                <tr id="user-row-{{ user.id }}">
-                    <td style="font-weight: 700; color: white;">@{{ user.username }}</td>
-                    <td style="opacity: 0.6; font-size: 0.9rem;">{{ user.created_at }}</td>
-                    <td>
-                        <span style="background: rgba(139, 92, 246, 0.1); color: var(--primary); padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.75rem;">
-                            {{ user.timeline_count }} ACTIVE TIMELINES
-                        </span>
-                    </td>
-                    <td style="display: flex; gap: 0.5rem;">
-                        <button class="control-btn" data-id="{{ user.id }}" data-username="@{{ user.username }}" onclick="handleReset(this)">
-                            <i data-lucide="key" style="width: 14px;"></i> Key Reset
-                        </button>
-                        <button class="control-btn" data-id="{{ user.id }}" data-username="@{{ user.username }}" onclick="handleWipe(this)" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2);">
-                            <i data-lucide="user-x" style="width: 14px;"></i> Wipe
-                        </button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
     </div>
 
     <script>
         lucide.createIcons();
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById('tab-' + tab).style.display = 'block';
+            event.target.classList.add('active');
+        }
+
+        async function dbAddSubject() {
+            const name = document.getElementById('db-subject-name').value;
+            const semester_id = document.getElementById('db-semester-id').value;
+            const difficulty = document.getElementById('db-subject-diff').value;
+            const is_elective = document.getElementById('db-subject-elective').value;
+
+            if(!name || !semester_id) return alert("Fill required fields.");
+
+            try {
+                const res = await fetch('/admin/api/syllabus/add-subject', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, semester_id, difficulty, is_elective })
+                });
+                if((await res.json()).success) {
+                    alert('Subject Registered.');
+                    document.getElementById('db-subject-name').value = '';
+                }
+            } catch(e) { alert("Registry error"); }
+        }
+
+        async function fetchMetadataForAdmin() {
+            const res = await fetch('/api/metadata');
+            const data = await res.json();
+            const tree = document.getElementById('admin-syllabus-tree');
+            tree.innerHTML = '';
+
+            // This is a simplified view for the admin to add chapters to existing subjects
+            // In a production app, we'd have a nested drill-down here.
+            // For now, let's just list semesters and subjects found.
+            
+            // Note: Currently listing would require a specialized "Admin View Metadata" API
+            tree.innerHTML = `<div style="padding: 1rem; background: #f8fafc; border-radius: 12px; margin-bottom: 1rem; border: 1px solid #e2e8f0;">
+                <p><strong>Note:</strong> Use the Database IDs to link subjects and chapters. Check the <code>padsala.db</code> tables for structure.</p>
+                <div class="input-group">
+                   <input type="number" id="db-target-subject-id" placeholder=" " required>
+                   <label class="input-label">Target Subject ID</label>
+                </div>
+                <div class="input-group">
+                   <input type="text" id="db-chapter-name" placeholder=" " required>
+                   <label class="input-label">New Chapter Name</label>
+                </div>
+                <button class="btn-primary" onclick="dbAddChapter()" style="width: 100%; justify-content: center;">Add Chapter</button>
+            </div>`;
+        }
+
+        async function dbAddChapter() {
+            const name = document.getElementById('db-chapter-name').value;
+            const subject_id = document.getElementById('db-target-subject-id').value;
+            if(!name || !subject_id) return;
+
+            try {
+                const res = await fetch('/admin/api/syllabus/add-chapter', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, subject_id })
+                });
+                if((await res.json()).success) {
+                    alert('Chapter Added.');
+                    document.getElementById('db-chapter-name').value = '';
+                }
+            } catch(e) { alert("Registry error"); }
+        }
 
         function filterUsers(query) {
             const rows = document.querySelectorAll('#user-tbody tr');
