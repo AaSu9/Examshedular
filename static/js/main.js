@@ -190,9 +190,10 @@ function updateSemesters() {
     const u = document.getElementById('select-university').value;
     const f = document.getElementById('select-faculty').value;
     const c = document.getElementById('select-course').value;
-    // v18: No longer filtering electives, they are now first-class subjects
     const allSems = Object.keys(db[u]?.[f]?.[c] || {});
-    populateDropdown('select-semester', allSems);
+    // Filter out elective groups from the semester dropdown — they are shown inline
+    const regularSems = allSems.filter(s => !s.startsWith('Elective'));
+    populateDropdown('select-semester', regularSems);
     updateSubjects();
 }
 
@@ -204,9 +205,25 @@ function updateSubjects() {
 
     if (u && f && c && s && db[u]?.[f]?.[c]?.[s]) {
         document.getElementById('subject-selection-zone').style.display = 'block';
-        const subjects = db[u][f][c][s];
-        document.getElementById('subjects-grid').innerHTML = Object.keys(subjects).map(name => {
-            const info = subjects[name];
+        const semSubjects = db[u][f][c][s];
+        
+        // Find elective placeholders in this semester (subjects named "Elective I", "Elective II" etc.)
+        // and merge the actual elective subject choices from their groups
+        let allSubjects = { ...semSubjects };
+        const courseData = db[u][f][c];
+        Object.keys(semSubjects).forEach(subName => {
+            if (subName.startsWith('Elective') && courseData[subName]) {
+                // Remove the placeholder entry (e.g. "Elective I")
+                delete allSubjects[subName];
+                // Add all actual elective subjects from that group
+                Object.keys(courseData[subName]).forEach(electiveSub => {
+                    allSubjects[electiveSub] = { ...courseData[subName][electiveSub], is_elective: true, _group: subName };
+                });
+            }
+        });
+
+        document.getElementById('subjects-grid').innerHTML = Object.keys(allSubjects).map(name => {
+            const info = allSubjects[name];
             const isSelected = selectedSubjects.some(sub => sub.name === name);
             const subObj = selectedSubjects.find(sub => sub.name === name) || { difficulty: info.difficulty || 2 };
             
@@ -225,7 +242,7 @@ function updateSubjects() {
                     </div>
                     <div style="font-size: 0.65rem; margin-top: 4px; opacity: 0.6; display: flex; justify-content: space-between;">
                         <span>LEVEL: ${subObj.difficulty === 3 ? 'HARD' : subObj.difficulty === 2 ? 'MED' : 'EASY'}</span>
-                        ${info.is_elective ? '<span style="color: #d946ef;">ELECTIVE</span>' : ''}
+                        ${info.is_elective ? `<span style="color: #d946ef;">✦ ${info._group || 'ELECTIVE'}</span>` : ''}
                     </div>
                 </div>
             `;
