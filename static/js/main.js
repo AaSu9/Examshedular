@@ -31,25 +31,63 @@ const STUDY_TIPS = [
 ];
 const STUDY_STICKERS = ["📚 Knowledge Loading...", "🧠 Brain Power Increasing", "🔥 Focus Mode Active", "🎯 Stay Locked In", "✨ You Are Doing Great", "💡 Concept Unlocked"];
 
+// REWARD SYSTEM (Confetti & Effects)
+function triggerConfetti() {
+    const duration = 3 * 1000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 10000 };
+
+    function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+            return clearInterval(interval);
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+        // since particles fall down, start a bit higher than random
+        confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+        confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+    }, 250);
+}
+
 // NAVIGATION
 function switchView(view) {
-    document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-
-    document.getElementById(`view-${view}`).classList.add('active');
-    document.getElementById(`nav-${view}`).classList.add('active');
-
-    if (view === 'dashboard') {
-        if (currentSchedule) {
-            document.getElementById('dashboard-ready').style.display = 'block';
-            document.getElementById('dashboard-empty').style.display = 'none';
-            renderBlueprint(currentSchedule);
-            updateDashboardStats();
-        } else {
-            document.getElementById('dashboard-ready').style.display = 'none';
-            document.getElementById('dashboard-empty').style.display = 'block';
-        }
+    const previousView = document.querySelector('.view-section.active');
+    if (previousView) {
+        previousView.style.opacity = '0';
+        previousView.style.transform = 'translateY(-10px)';
     }
+
+    setTimeout(() => {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+
+        const targetView = document.getElementById(`view-${view}`);
+        targetView.classList.add('active');
+        targetView.style.opacity = '1';
+        targetView.style.transform = 'translateY(0)';
+        document.getElementById(`nav-${view}`).classList.add('active');
+
+        if (view === 'dashboard') {
+            if (currentSchedule) {
+                document.getElementById('dashboard-ready').style.display = 'block';
+                document.getElementById('dashboard-empty').style.display = 'none';
+                renderBlueprint(currentSchedule);
+                updateDashboardStats();
+            } else {
+                document.getElementById('dashboard-ready').style.display = 'none';
+                document.getElementById('dashboard-empty').style.display = 'block';
+            }
+        }
+        
+        // Premium touch: Auto-scroll to top on view change
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 200);
 }
 
 // STEP NAVIGATION
