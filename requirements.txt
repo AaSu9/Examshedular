@@ -1,7 +1,8 @@
 django
-django-allauth
-django-rest-framework
+django-allauth[socialaccount]
+djangorestframework
 django-cors-headers
 nepali-datetime
 requests
 python-dateutil
+pyjwt
