@@ -15,12 +15,21 @@ let isLoggedIn = false;
 let currentUsername = "";
 
 const RANKS = [
-    { min: 0, title: "INITIATE" },
-    { min: 500, title: "ADEPT" },
-    { min: 2000, title: "SCHOLAR" },
-    { min: 5000, title: "ARCHITECT" },
-    { min: 10000, title: "GRANDMASTER" }
+    { min: 0, title: "Beginner" },
+    { min: 500, title: "Student Monk" },
+    { min: 2000, title: "Focus Warrior" },
+    { min: 5000, title: "Knowledge Seeker" },
+    { min: 10000, title: "Master Scholar" },
+    { min: 25000, title: "Superhuman Scholar" }
 ];
+const STUDY_TIPS = [
+    "Read actively. Try explaining the concept to yourself.",
+    "Use the Feynman technique: explain this topic as if teaching a beginner.",
+    "If stuck for 5 minutes, move to another subtopic.",
+    "Write one key takeaway every 10 minutes.",
+    "Close your eyes for 10 seconds to refresh your brain."
+];
+const STUDY_STICKERS = ["📚 Knowledge Loading...", "🧠 Brain Power Increasing", "🔥 Focus Mode Active", "🎯 Stay Locked In", "✨ You Are Doing Great", "💡 Concept Unlocked"];
 
 // NAVIGATION
 function switchView(view) {
@@ -30,9 +39,16 @@ function switchView(view) {
     document.getElementById(`view-${view}`).classList.add('active');
     document.getElementById(`nav-${view}`).classList.add('active');
 
-    // Special logic for Dashboard
-    if (view === 'dashboard' && currentSchedule) {
-        renderBlueprint(currentSchedule);
+    if (view === 'dashboard') {
+        if (currentSchedule) {
+            document.getElementById('dashboard-ready').style.display = 'block';
+            document.getElementById('dashboard-empty').style.display = 'none';
+            renderBlueprint(currentSchedule);
+            updateDashboardStats();
+        } else {
+            document.getElementById('dashboard-ready').style.display = 'none';
+            document.getElementById('dashboard-empty').style.display = 'block';
+        }
     }
 }
 
@@ -536,7 +552,10 @@ document.getElementById('btn-save-adjust').onclick = async () => {
     try {
         const res = await fetch('/api/replan-day', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': window.CSRF_TOKEN
+            },
             body: JSON.stringify({
                 subject: day.subject,
                 focus: day.daily_focus || "Revision",
@@ -654,13 +673,12 @@ function playTone(freq, type, duration) {
 
 function toggleTimer() {
     const btn = document.getElementById('btn-play-pause');
-    const ctx = getAudioCtx(); // Lazy loading
+    const ctx = getAudioCtx();
 
     if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;
-        btn.innerHTML = `<i data-lucide="play"></i> Resume`;
-        document.getElementById('bar-play-icon').setAttribute('data-lucide', 'play');
+        btn.innerHTML = `<i data-lucide="play"></i> Resume Session`;
     } else {
         if (ctx.state === 'suspended') ctx.resume();
 
@@ -668,56 +686,72 @@ function toggleTimer() {
             if (secondsRemaining > 0) {
                 secondsRemaining--;
 
-                // AUDITORY CUES
-                // 1. Tik-Tik every second (Louder & Sharper)
-                playTone(1000, 'triangle', 0.05);
+                // XP Gain: 10 XP per minute = ~0.166 XP per second
+                focusXP += (10 / 60);
+                
+                // Randomly spawn sticker every ~45 seconds
+                if (Math.random() < (1 / 45)) spawnSticker();
+                
+                // Randomly show smart tip every 10 minutes (600 seconds)
+                if (secondsRemaining % 600 === 0 && secondsRemaining !== totalSecondsInSession) showSmartTip();
 
-                // 2. 5-Minute Warning (Double Beep)
+                // Auditory Cues (Subtle)
+                if (secondsRemaining % 60 === 0) playTone(800, 'triangle', 0.1); 
+
                 if (secondsRemaining === 300) {
-                    playTone(600, 'square', 0.2);
-                    setTimeout(() => playTone(600, 'square', 0.2), 300);
-                    triggerFocusWarning("5 Minutes Remaining - Final Push!");
-                    voiceSystem.trigger('warning_5m');
+                    triggerFocusWarning("Commander, 5 minutes left! Stay locked in.");
+                    if (typeof voiceSystem !== 'undefined') voiceSystem.trigger('warning_5m');
                 }
 
-                // Track Idle Time
                 if (Date.now() - focusBiometrics.lastActive > 30000) {
                     focusBiometrics.idleSeconds++;
                 }
+
                 updateTimerUI();
+                updateFocusStatsUI();
             } else {
                 finishSession();
             }
         }, 1000);
-        btn.innerHTML = `<i data-lucide="pause"></i> Focus Active`;
-        document.getElementById('bar-play-icon').setAttribute('data-lucide', 'pause');
-
-        if (document.getElementById('yt-input').value) loadYT();
+        btn.innerHTML = `<i data-lucide="pause"></i> Session Active`;
     }
-    lucide.createIcons();
+    if (lucide) lucide.createIcons();
+}
+
+function updateFocusStatsUI() {
+    const xpEl = document.getElementById('stat-xp');
+    if (xpEl) xpEl.innerText = Math.floor(focusXP);
 }
 
 function finishSession() {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = null;
 
-    // v17: Audio Notification & Flow Exit
-    try {
-        const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
-        audio.play();
-    } catch (e) { }
+    localStorage.setItem('padsala_xp', Math.floor(focusXP));
+    
+    // Streak logic (basic)
+    if (!localStorage.getItem('last_study_date')) {
+        concentrationStreak = 1;
+    } else {
+        const last = new Date(localStorage.getItem('last_study_date'));
+        const now = new Date();
+        const diff = (now - last) / (1000 * 60 * 60 * 24);
+        if (diff < 1.5 && diff > 0.5) {
+            concentrationStreak++;
+        } else if (diff > 1.5) {
+             concentrationStreak = 1;
+        }
+    }
+    localStorage.setItem('last_study_date', new Date().toISOString());
+    localStorage.setItem('padsala_streak', concentrationStreak);
 
     if (document.fullscreenElement) {
         document.exitFullscreen().catch(() => { });
     }
 
-    // Calculate Focus Score (v17)
-    const factor = (focusBiometrics.tabSwitches * 10) + (focusBiometrics.idleSeconds / 10);
-    const score = Math.max(0, 100 - factor);
-    window.lastFocusScore = score;
-
-    // Trigger Neural Encoding Modal
-    document.getElementById('neural-modal').classList.add('active');
+    // Reward feedback
+    alert(`Session Complete!\nXP Gained: ${Math.floor(focusXP)}\nRank: ${getCurrentRank().title}`);
+    switchView('dashboard');
 }
 
 async function submitNeural() {
@@ -785,7 +819,10 @@ async function syncXP() {
     try {
         await fetch('/api/v17/sync-xp', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': window.CSRF_TOKEN
+            },
             body: JSON.stringify({ xp: focusXP, streak: concentrationStreak })
         });
     } catch (e) { console.error("XP Sync Fail", e); }
@@ -888,7 +925,10 @@ async function handleAuth(type) {
     try {
         const res = await fetch(`/api/auth/${type}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': window.CSRF_TOKEN
+            },
             body: JSON.stringify({ username, password })
         });
         const data = await res.json();
@@ -927,7 +967,7 @@ function updateAuthUI() {
         statusEl.innerHTML = `
             <div style="display: flex; align-items: center; gap: 1rem;">
                 <span style="color: var(--primary); font-weight: 700;">@${currentUsername}</span>
-                <button class="control-btn" style="padding: 4px 8px;" onclick="location.href='/api/auth/logout'">Logout</button>
+                <button class="control-btn" style="padding: 4px 8px;" onclick="location.href='/accounts/logout/'">Logout</button>
             </div>
         `;
         if (welcomeUser) welcomeUser.innerText = currentUsername;
@@ -960,7 +1000,10 @@ async function saveToServer(name, data, inputs) {
     try {
         await fetch('/api/sync/save', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': window.CSRF_TOKEN
+            },
             body: JSON.stringify({ name, data, inputs })
         });
     } catch (e) { console.error("Cloud save failed", e); }

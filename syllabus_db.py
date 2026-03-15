@@ -38,11 +38,14 @@ def get_all_metadata():
                     if sem_name not in data[uni_name][fac_name][course_name]:
                         data[uni_name][fac_name][course_name][sem_name] = {}
                     
-                    subs = cursor.execute('SELECT id, name FROM subjects WHERE semester_id = ?', (sem['id'],)).fetchall()
+                    subs = cursor.execute('SELECT id, name, base_difficulty, is_elective FROM subjects WHERE semester_id = ?', (sem['id'],)).fetchall()
                     for sub in subs:
                         sub_name = sub['name']
-                        # Chapters are fetched only when specific subject details are needed
-                        data[uni_name][fac_name][course_name][sem_name][sub_name] = [] 
+                        data[uni_name][fac_name][course_name][sem_name][sub_name] = {
+                            "id": sub['id'],
+                            "difficulty": sub['base_difficulty'] or 2,
+                            "is_elective": bool(sub['is_elective'])
+                        }
                         
     conn.close()
     return data

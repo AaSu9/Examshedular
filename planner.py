@@ -100,7 +100,7 @@ def get_micro_plan(subject_name, focus_area, daily_hours, session_mins, break_mi
             "minutes": int(duration_val)
         })
         
-        remaining_minutes = remaining_minutes - duration_val
+        remaining_minutes = float(remaining_minutes) - float(duration_val)
         accumulated_study = accumulated_study + duration_val
         sessions_count = sessions_count + 1
         current_time = end_time

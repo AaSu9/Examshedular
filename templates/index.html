@@ -1,21 +1,26 @@
+{% load static %}
+{% load socialaccount %}
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Padsala | Galaxy Focus</title>
+    <title>Padsala | Professional Exam Planner</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
     <!-- PWA Settings -->
-    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    <meta name="theme-color" content="#0b1020">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="theme-color" content="#f8fafc">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
@@ -28,7 +33,7 @@
     <div class="app-shell" id="app-shell">
         <header class="app-header">
             <div class="logo">
-                <i data-lucide="zap" style="color: #a78bfa;"></i>
+                <i data-lucide="zap" style="color: var(--primary);"></i>
                 PADSALA
             </div>
             <nav class="app-nav">
@@ -44,8 +49,11 @@
                 <button class="nav-link" onclick="switchView('analytics')" id="nav-analytics">Mind Mirror</button>
             </nav>
             <div style="display: flex; align-items: center; gap: 1rem;">
-                <div id="auth-status" style="font-size: 0.8rem; opacity: 0.7;">
+                <div id="auth-status" style="font-size: 0.8rem; opacity: 0.7; display: flex; gap: 0.5rem;">
                     <button class="control-btn" onclick="openAuthModal()">Login</button>
+                    <a href="{% provider_login_url 'google' %}" class="control-btn" style="background: white; color: #444; display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+                        <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" style="width: 14px;"> Google
+                    </a>
                 </div>
                 <div id="current-bs-display" style="font-size: 0.8rem; opacity: 0.7;">System Ready</div>
                 <button class="control-btn" onclick="toggleSettings()"
@@ -66,41 +74,41 @@
 
             <!-- 1. WELCOME -->
             <div id="step-1" class="step-container active">
-                <div style="text-align: center; padding: 2rem 0;">
+                <div style="text-align: center; padding: 4rem 0;">
                     <div class="glow-icon"
-                        style="margin: 0 auto 2rem; width: 80px; height: 80px; background: rgba(139, 92, 246, 0.2); border: 1px solid var(--primary); border-radius: 24px; display: flex; align-items: center; justify-content: center; box-shadow: var(--neon-shadow);">
-                        <i data-lucide="sparkles" style="width: 40px; height: 40px; color: var(--primary);"></i>
+                        style="margin: 0 auto 2.5rem; width: 100px; height: 100px; background: white; border: 1px solid var(--border-soft); border-radius: 32px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg);">
+                        <i data-lucide="shield-check" style="width: 50px; height: 50px; color: var(--primary);"></i>
                     </div>
-                    <h1 class="text-gradient" style="font-size: 3rem; margin-bottom: 1rem;">System Bridge</h1>
-                    <p style="font-size: 1.1rem; color: #94a3b8; max-width: 600px; margin: 0 auto 3rem;">
-                        Manage your current cognitive architecture or initialize new study protocols for upcoming exam
-                        phases.
+                    <h1 class="text-gradient" style="font-size: 3.5rem; margin-bottom: 1.5rem; font-weight: 900; letter-spacing: -0.04em;">System Command</h1>
+                    <p style="font-size: 1.25rem; color: var(--text-muted); max-width: 650px; margin: 0 auto 4rem; line-height: 1.6;">
+                        Manage your existing cognitive blueprints or initialize a new high-performance study protocol.
                     </p>
 
                     <div id="home-protocols-container"
-                        style="display: flex; flex-direction: column; gap: 1rem; max-width: 500px; margin: 0 auto;">
+                        style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 500px; margin: 0 auto;">
                         <!-- Quick Link to Dashboard -->
                         <button class="btn-primary" onclick="initiateNewProtocol()"
-                            style="justify-content: center; font-size: 1.1rem; padding: 1.5rem;">
-                            Initialize New Protocol <i data-lucide="plus-circle"></i>
+                            style="justify-content: center; font-size: 1.15rem; width: 100%;">
+                            Deploy New Protocol <i data-lucide="zap"></i>
                         </button>
 
-                        <div id="home-active-summary" class="glass-card" style="padding: 1.5rem; display: none;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-size: 0.9rem; opacity: 0.7;">Active Protocols:</span>
-                                <span id="home-protocol-count" style="font-weight: 800; color: var(--primary);">0</span>
+                        <div id="home-active-summary" class="glass-card" style="padding: 2rem; display: none; text-align: left; border-left: 6px solid var(--primary);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <span style="font-weight: 700; color: var(--text-main); font-size: 1.1rem;">Active Blueprints</span>
+                                <span id="home-protocol-count" style="font-weight: 900; font-size: 1.5rem; color: var(--primary);">0</span>
                             </div>
-                            <button class="control-btn" onclick="switchView('dashboard')"
-                                style="width: 100%; margin-top: 1rem; border-color: var(--primary); color: var(--primary);">
-                                Open Dashboard <i data-lucide="layout"></i>
+                            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">Access your current optimized study sessions.</p>
+                            <button class="control-btn primary" onclick="switchView('dashboard')" style="width: 100%; justify-content: center;">
+                                Open Dashboard <i data-lucide="external-link"></i>
                             </button>
                         </div>
                     </div>
 
                     <div id="home-welcome-user"
-                        style="margin-top: 3rem; font-weight: 600; color: #64748b; font-size: 0.9rem;">
-                        Logged as <span id="welcome-username" style="color: var(--primary);">guest</span>.
-                        Join the <span style="color: #fff;">Padsala Alpha</span> collective.
+                        style="margin-top: 4rem; font-weight: 600; color: var(--text-muted); font-size: 0.95rem; background: var(--surface-sunken); display: inline-block; padding: 0.6rem 1.2rem; border-radius: 100px; border: 1px solid var(--border-soft);">
+                        Operator: <span id="welcome-username" style="color: var(--primary); font-weight: 800;">guest</span>
+                        <span style="margin: 0 0.5rem; opacity: 0.3;">|</span>
+                        Status: <span style="color: var(--success); font-weight: 800;">Authorized</span>
                     </div>
                 </div>
             </div>
@@ -205,13 +213,48 @@
 
         <!-- DASHBOARD VIEW -->
         <div id="view-dashboard" class="view-section">
-            <div id="blueprint-content">
-                <!-- If no schedule, show empty state -->
-                <div class="glass-card" style="text-align: center; padding: 4rem 2rem;">
-                    <i data-lucide="layout" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.3;"></i>
-                    <h2>No active plan found</h2>
-                    <p style="opacity: 0.6; margin-bottom: 2rem;">Initialize your study protocol from the Home tab.</p>
-                    <button class="btn-primary" onclick="switchView('home')">Start Setup Protocol</button>
+            <div id="dashboard-ready" style="display: none;">
+                <div style="display: grid; grid-template-columns: 1fr 350px; gap: 2rem;">
+                    <!-- Left: Main Blueprint -->
+                    <div id="blueprint-content"></div>
+                    
+                    <!-- Right: Gamification & Stats -->
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div class="glass-card" style="padding: 1.5rem; text-align: center; border-bottom: 4px solid var(--accent);">
+                            <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Study Streak</div>
+                            <div style="font-size: 3rem; font-weight: 900; color: var(--accent);" id="dash-streak">0</div>
+                            <div style="font-size: 0.8rem; opacity: 0.6;">Days Active</div>
+                        </div>
+
+                        <div class="glass-card" style="padding: 1.5rem; text-align: center; border-bottom: 4px solid var(--primary);">
+                            <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">XP Level</div>
+                            <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary);" id="dash-rank">Beginner</div>
+                            <div style="font-size: 1rem; font-weight: 700; margin-top: 0.5rem;"><span id="dash-xp">0</span> XP</div>
+                        </div>
+
+                        <div class="glass-card" style="padding: 1.5rem;">
+                            <h4 style="margin-bottom: 1rem; font-size: 0.9rem;">Syllabus Readiness</h4>
+                            <div style="height: 10px; background: var(--surface-sunken); border-radius: 5px; overflow: hidden;">
+                                <div id="dash-readiness-bar" style="height: 100%; width: 0%; background: var(--secondary); transition: width 1s ease;"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.75rem; font-weight: 700;">
+                                <span>Mastery</span>
+                                <span id="dash-readiness-val">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="dashboard-empty">
+                <div class="glass-card" style="text-align: center; padding: 6rem 2rem;">
+                    <div class="glow-icon" style="margin: 0 auto 2rem; width: 80px; height: 80px; background: var(--surface-sunken); border-radius: 24px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="layout" style="width: 40px; height: 40px; opacity: 0.3;"></i>
+                    </div>
+                    <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">No Active Protocol</h2>
+                    <p style="opacity: 0.6; margin-bottom: 2.5rem; max-width: 400px; margin-left: auto; margin-right: auto;">Your command center is offline. Initialize a new study timeline to begin monitoring your progress.</p>
+                    <button class="btn-primary" onclick="switchView('home')" style="margin: 0 auto;">Initialize System</button>
                 </div>
             </div>
         </div>
@@ -240,135 +283,82 @@
         </div>
 
         <!-- GALAXY FOCUS OVERLAY -->
-        <div id="focus-mode">
+        <!-- PU DEEP READING FOCUS OVERLAY -->
+        <div id="focus-mode" data-theme="dark">
             <div class="focus-container">
-                <!-- LEFT: TIMER -->
+                <!-- LEFT: IMMERSIVE TIMER & COMPANION -->
                 <div class="timer-sector">
+                    <!-- Environment Themes -->
+                    <div class="theme-selector" style="display: flex; gap: 1rem; margin-bottom: 2rem; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="setFocusTheme('library')" class="control-btn active" style="font-size: 0.75rem;">Night Library</button>
+                        <button onclick="setFocusTheme('mountain')" class="control-btn" style="font-size: 0.75rem;">Mountain Cabin</button>
+                        <button onclick="setFocusTheme('zen')" class="control-btn" style="font-size: 0.75rem;">Zen Desk</button>
+                        <button onclick="setFocusTheme('space')" class="control-btn" style="font-size: 0.75rem;">Space Station</button>
+                    </div>
+
                     <div class="glow-ring-container">
+                        <div class="breathing-circle"></div>
                         <svg class="progress-ring" viewBox="0 0 350 350">
-                            <defs>
-                                <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stop-color="#8b5cf6" />
-                                    <stop offset="100%" stop-color="#d946ef" />
-                                </linearGradient>
-                                <filter id="glow">
-                                    <feGaussianBlur stdDeviation="15" result="coloredBlur" />
-                                    <feMerge>
-                                        <feMergeNode in="coloredBlur" />
-                                        <feMergeNode in="SourceGraphic" />
-                                    </feMerge>
-                                </filter>
-                            </defs>
-                            <circle stroke="rgba(255,255,255,0.03)" stroke-width="10" fill="transparent" r="155"
-                                cx="175" cy="175" />
-                            <circle id="timer-ring-fill" stroke="url(#neonGradient)" stroke-width="10"
-                                stroke-dasharray="974" stroke-dashoffset="974" stroke-linecap="round" fill="transparent"
-                                r="155" cx="175" cy="175" filter="url(#glow)"
-                                style="transition: stroke-dashoffset 1s linear;" />
+                            <circle stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent" r="150" cx="175" cy="175" />
+                            <circle id="timer-ring-fill" stroke="var(--accent)" stroke-width="8" stroke-dasharray="942" stroke-dashoffset="942" stroke-linecap="round" fill="transparent" r="150" cx="175" cy="175" style="transition: stroke-dashoffset 1s linear;" />
                         </svg>
                         <div class="timer-text" id="vault-timer">00:00</div>
                     </div>
 
-                    <div class="timer-controls">
-                        <button class="control-btn" onclick="openTimerSettings()"><i data-lucide="settings"></i> Manage
-                            Timer</button>
-                        <button class="control-btn primary" id="btn-play-pause" onclick="toggleTimer()"><i
-                                data-lucide="play"></i> Start</button>
-                        <button class="control-btn" onclick="exitFocus()"><i data-lucide="square"></i> Stop</button>
+                    <!-- Companion Character -->
+                    <div id="companion-area" style="margin-top: 2rem; display: flex; align-items: center; gap: 1rem; justify-content: center;">
+                        <div class="companion-avatar" id="companion-owl" style="font-size: 3rem;">🦉</div>
+                        <div class="companion-bubble" id="companion-msg" style="background: var(--surface); color: var(--text-main); padding: 0.8rem 1.2rem; border-radius: 18px; position: relative; font-size: 0.9rem; font-weight: 600; box-shadow: var(--shadow-md);">
+                            Let's unlock your potential!
+                        </div>
+                    </div>
+
+                    <div class="timer-controls" style="margin-top: 3rem; display: flex; gap: 1rem; justify-content: center;">
+                        <button class="btn-primary" onclick="toggleTimer()" id="btn-play-pause"><i data-lucide="play"></i> Start Session</button>
+                        <button class="control-btn" onclick="exitFocus()"><i data-lucide="x"></i> Exit Focus</button>
                     </div>
 
                     <div style="margin-top: 2rem; text-align: center;">
-                        <h2 id="focus-title" style="font-size: 2rem; margin-bottom: 0.5rem;">Focus Session</h2>
-                        <p id="focus-task" style="color: #94a3b8; font-size: 1.1rem;">Deep Work Protocol</p>
+                        <h2 id="focus-title" style="font-size: 1.5rem; margin-bottom: 0.5rem;">Deep Reading Mode</h2>
+                        <p id="focus-task" style="color: var(--text-muted); font-size: 1rem;">Protocol: Mastery Synthesis</p>
                     </div>
                 </div>
 
-                <!-- RIGHT: SIDEBAR -->
-                <div class="focus-sidebar">
-                    <!-- Stats -->
-                    <div class="glass-panel">
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <span class="stat-val" id="stat-xp" style="color: #d946ef;">0</span>
-                                <span class="stat-lbl">XP Gained</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-val" id="stat-streak" style="color: #8b5cf6;">0</span>
-                                <span class="stat-lbl">Streak</span>
-                            </div>
-                        </div>
-                        <div style="text-align: center;">
-                            <span class="stat-lbl" style="display: block; margin-bottom: 5px;">Current Rank</span>
-                            <span id="stat-rank" style="font-weight: 800; color: white;">INITIATE</span>
-                        </div>
-                    </div>
-
-                    <!-- Focus Stream -->
-                    <div class="glass-panel" style="flex: 1;">
-                        <div class="focus-card-header">FOCUS STREAM</div>
-                        <div class="yt-frame" id="yt-frame">
-                            <div
-                                style="height: 100%; display: flex; align-items: center; justify-content: center; color: #64748b; background: rgba(0,0,0,0.5);">
-                                <i data-lucide="image" style="width: 32px"></i>
-                            </div>
-                        </div>
-
-                        <div class="stream-input-group">
-                            <input type="text" id="yt-input" class="stream-input"
-                                placeholder="Paste YouTube Link or Search...">
-                            <button class="control-btn" style="padding: 0.5rem;" onclick="loadYT()"><i
-                                    data-lucide="search"></i></button>
-                        </div>
-
-                        <div class="preset-grid">
-                            <button class="control-btn" onclick="playPreset('lofi')"
-                                style="justify-content: center; font-size: 0.8rem;">Lo-Fi</button>
-                            <button class="control-btn" onclick="playPreset('rain')"
-                                style="justify-content: center; font-size: 0.8rem;">Rain</button>
-                        </div>
-                    </div>
-
-                    <!-- Right: Knowledge Graph / Mastery -->
-                    <div class="glass-card" style="padding: 2rem;">
-                        <h3 style="margin-top: 0; display: flex; justify-content: space-between;">
-                            <span>Knowledge Architecture</span>
-                            <i data-lucide="network" style="width: 18px; opacity: 0.5;"></i>
+                <!-- RIGHT: AI TUTOR & TOOLS -->
+                <div class="focus-sidebar" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <!-- AI Tutor Panel -->
+                    <div class="glass-panel" style="flex: 1; display: flex; flex-direction: column; min-height: 300px;">
+                        <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; color: var(--accent);">
+                            <i data-lucide="brain"></i> AI Study Tutor
                         </h3>
-                        <div id="mastery-grid"
-                            style="margin-top: 2rem; display: flex; flex-direction: column; gap: 1.5rem;">
-                            <div style="text-align: center; padding: 4rem; opacity: 0.3;">
-                                <i data-lucide="database" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
-                                <p>Loading Cognitive Data...</p>
+                        <div id="ai-chat-box" style="flex: 1; overflow-y: auto; margin-bottom: 1rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 12px; font-size: 0.9rem;">
+                            <div class="ai-msg" style="margin-bottom: 1rem; opacity: 0.9;">Hello! I'm your AI tutor. Stuck on a concept? Explain something? Ask me anything!</div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="ai-query" class="stream-input" placeholder="Explain this concept..." style="flex: 1; margin: 0;">
+                            <button class="control-btn primary" onclick="askAiTutor()" style="padding: 0.8rem;"><i data-lucide="send"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- YT Study Player -->
+                    <div class="glass-panel" style="height: 250px;">
+                        <h3 style="margin-bottom: 1rem; font-size: 1rem; color: #ef4444;"><i data-lucide="youtube"></i> Focus Stream</h3>
+                        <div id="yt-player-container" style="aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; height: calc(100% - 3rem);">
+                            <div style="height: 100%; display: flex; align-items: center; justify-content: center; opacity: 0.3;">
+                                <i data-lucide="video" style="width: 48px; height: 48px;"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- BOTTOM: MUSIC PLAYER -->
-            <div class="music-bar">
-                <div class="visualizer-container">
-                    <div class="v-bar" style="animation-delay: 0s"></div>
-                    <div class="v-bar" style="animation-delay: 0.1s"></div>
-                    <div class="v-bar" style="animation-delay: 0.2s"></div>
-                    <div class="v-bar" style="animation-delay: 0.3s"></div>
-                    <div class="v-bar" style="animation-delay: 0.4s"></div>
-                    <div class="v-bar" style="animation-delay: 0.5s"></div>
-                    <div class="v-bar" style="animation-delay: 0.6s"></div>
-                    <div class="v-bar" style="animation-delay: 0.7s"></div>
-                    <div class="v-bar" style="animation-delay: 0.8s"></div>
-                    <div class="v-bar" style="animation-delay: 0.5s"></div>
-                    <div class="v-bar" style="animation-delay: 0.2s"></div>
-                    <div class="v-bar" style="animation-delay: 0s"></div>
-                </div>
-
-                <div class="player-controls">
-                    <i data-lucide="skip-back" style="cursor: pointer;"></i>
-                    <div class="play-cir" onclick="toggleTimer()">
-                        <i data-lucide="play" id="bar-play-icon" style="fill: white;"></i>
-                    </div>
-                    <i data-lucide="skip-forward" style="cursor: pointer;"></i>
-                </div>
+            
+            <!-- Floating Stickers Container -->
+            <div id="sticker-container" style="position: fixed; inset: 0; pointer-events: none; z-index: 1000;"></div>
+            
+            <!-- Smart Tip Card -->
+            <div id="smart-tip-card" class="glass-card" style="position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); display: none; align-items: center; gap: 1rem; padding: 1rem 2rem; border-radius: 100px; border-bottom: 3px solid var(--accent); z-index: 2000;">
+                <i data-lucide="lightbulb" style="color: var(--accent); width: 24px; height: 24px;"></i>
+                <span id="smart-tip-text" style="font-weight: 600; font-size: 0.95rem;">Active reading is key!</span>
             </div>
         </div>
 
@@ -531,8 +521,12 @@
         </div>
         <div id="snow-container"></div>
 
-        <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-        <script>lucide.createIcons();</script>
+        <script src="{% static 'js/main.js' %}"></script>
+        <script>
+            // CSRF Token for Django
+            window.CSRF_TOKEN = "{{ csrf_token }}";
+            lucide.createIcons();
+        </script>
 </body>
 
 </html>
