@@ -140,7 +140,8 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
     prepared_exams = []
     for ex in exams_list:
         try:
-            ad_date = bs_to_ad(ex['date'])
+            # Parse the incoming date from HTML5 <input type="date"> as Gregorian (AD)
+            ad_date = datetime.strptime(ex['date'], '%Y-%m-%d').date()
             prepared_exams.append({
                 **ex,
                 'ad_date': ad_date,

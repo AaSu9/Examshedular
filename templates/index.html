@@ -52,9 +52,6 @@
             <div style="display: flex; align-items: center; gap: 1rem;">
                 <div id="auth-status" style="font-size: 0.8rem; opacity: 0.7; display: flex; gap: 0.5rem;">
                     <button class="control-btn" onclick="openAuthModal()">Login</button>
-                    <a href="{% provider_login_url 'google' %}" class="control-btn" style="background: white; color: #444; display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
-                        <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" style="width: 14px;"> Google
-                    </a>
                 </div>
                 <div id="current-bs-display" style="font-size: 0.8rem; opacity: 0.7;">System Ready</div>
                 <button class="control-btn" onclick="toggleSettings()"
@@ -454,50 +451,44 @@
                 </div>
 
                 <div id="login-form">
-                    <div class="input-group">
-                        <input type="text" id="login-username" class="stream-input" placeholder=" " required>
-                        <label class="input-label"><i data-lucide="user" style="width: 14px;"></i> Mission ID</label>
+                    <div class="panda-input-group">
+                        <label class="panda-input-label"><i data-lucide="user" style="width: 16px;"></i> Mission ID</label>
+                        <input type="text" id="login-username" class="panda-input" placeholder="Enter ID..." required>
                     </div>
-                    <div class="input-group">
-                        <input type="password" id="login-password" class="stream-input" placeholder=" " required>
-                        <label class="input-label"><i data-lucide="key" style="width: 14px;"></i> Access Key</label>
+                    <div class="panda-input-group">
+                        <label class="panda-input-label"><i data-lucide="key" style="width: 16px;"></i> Access Key</label>
+                        <input type="password" id="login-password" class="panda-input" placeholder="Enter Key..." required>
                         <i data-lucide="eye"
-                            style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; opacity: 0.5;"
+                            style="position: absolute; right: 1.25rem; bottom: 1.2rem; cursor: pointer; color: #000;"
                             onclick="togglePassword('login-password')"></i>
                     </div>
-                    <button class="btn-primary" onclick="handleAuth('login')"
-                        style="width: 100%; justify-content: center;">
+                    <button class="panda-btn" onclick="handleAuth('login')">
                         Initiate Connection <i data-lucide="zap"></i>
                     </button>
-                    <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; opacity: 0.6;">
+                    <p style="text-align: center; margin-top: 1.5rem; font-size: 0.95rem; font-weight: 700; color: #666;">
                         New Recruit? <a href="#" onclick="toggleAuthForm('register')"
-                            style="color: var(--primary); text-decoration: none; border-bottom: 1px dashed;">Register
-                            Identity</a>
+                            style="color: #000; text-decoration: none; border-bottom: 2px solid #000;">Register Identity</a>
                     </p>
                 </div>
 
                 <div id="register-form" style="display: none;">
-                    <div class="input-group">
-                        <input type="text" id="reg-username" class="stream-input" placeholder=" " required>
-                        <label class="input-label"><i data-lucide="user-plus" style="width: 14px;"></i> Target
-                            ID</label>
+                    <div class="panda-input-group">
+                        <label class="panda-input-label"><i data-lucide="user-plus" style="width: 16px;"></i> Target ID</label>
+                        <input type="text" id="reg-username" class="panda-input" placeholder="Choose ID..." required>
                     </div>
-                    <div class="input-group">
-                        <input type="password" id="reg-password" class="stream-input" placeholder=" " required>
-                        <label class="input-label"><i data-lucide="lock" style="width: 14px;"></i> Encryption
-                            Code</label>
+                    <div class="panda-input-group">
+                        <label class="panda-input-label"><i data-lucide="lock" style="width: 16px;"></i> Encryption Code</label>
+                        <input type="password" id="reg-password" class="panda-input" placeholder="Create Key..." required>
                         <i data-lucide="eye"
-                            style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; opacity: 0.5;"
+                            style="position: absolute; right: 1.25rem; bottom: 1.2rem; cursor: pointer; color: #000;"
                             onclick="togglePassword('reg-password')"></i>
                     </div>
-                    <button class="btn-primary" onclick="handleAuth('register')"
-                        style="width: 100%; justify-content: center;">
+                    <button class="panda-btn" onclick="handleAuth('register')">
                         Establish Link <i data-lucide="shield-check"></i>
                     </button>
-                    <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; opacity: 0.6;">
+                    <p style="text-align: center; margin-top: 1.5rem; font-size: 0.95rem; font-weight: 700; color: #666;">
                         Identified? <a href="#" onclick="toggleAuthForm('login')"
-                            style="color: var(--primary); text-decoration: none; border-bottom: 1px dashed;">Return to
-                            Bridge</a>
+                            style="color: #000; text-decoration: none; border-bottom: 2px solid #000;">Return to Bridge</a>
                     </p>
                 </div>
             </div>

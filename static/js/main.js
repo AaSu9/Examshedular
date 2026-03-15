@@ -57,6 +57,13 @@ function triggerConfetti() {
 
 // NAVIGATION
 function switchView(view) {
+    // Protect Routes
+    if ((view === 'dashboard' || view === 'leaderboard' || view === 'analytics') && !isLoggedIn) {
+        openAuthModal();
+        // Option to display a toast here
+        return;
+    }
+
     const previousView = document.querySelector('.view-section.active');
     if (previousView) {
         previousView.style.opacity = '0';
@@ -83,6 +90,10 @@ function switchView(view) {
                 document.getElementById('dashboard-ready').style.display = 'none';
                 document.getElementById('dashboard-empty').style.display = 'block';
             }
+        } else if (view === 'leaderboard') {
+            loadLeaderboard();
+        } else if (view === 'analytics') {
+            syncMirrors();
         }
         
         // Premium touch: Auto-scroll to top on view change
@@ -258,13 +269,17 @@ function toggleSubject(event, name, defaultDiff) {
 function prepareDateInputs() {
     navigateTo(3);
     const container = document.getElementById('exam-date-inputs');
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 15);
+    const dateStr = defaultDate.toISOString().split('T')[0];
+    
     container.innerHTML = selectedSubjects.map(s => `
         <div class="glass-card" style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; border: 1px solid #e2e8f0; background: white; border-radius: 16px;">
             <div>
                 <div style="font-weight: 800; font-size: 1.1rem;">${s.name}</div>
                 <div style="font-size: 0.75rem; opacity: 0.6;">DIFF: ${s.difficulty === 3 ? 'HARD' : s.difficulty === 2 ? 'MED' : 'EASY'}</div>
             </div>
-            <input type="text" class="exam-date-input" data-subject="${s.name}" data-difficulty="${s.difficulty}" value="2083-09-15" style="width: 180px;">
+            <input type="date" class="exam-date-input" data-subject="${s.name}" data-difficulty="${s.difficulty}" value="${dateStr}" style="width: 180px; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border);">
         </div>
     `).join('');
 }

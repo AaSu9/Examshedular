@@ -917,13 +917,29 @@ p {
 
 .stream-input {
     flex: 1;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--glass-border);
+    background: var(--surface-sunken);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.75rem;
-    color: white;
+    color: var(--text-main);
     outline: none;
     font-size: 0.85rem;
+}
+
+#focus-mode .stream-input {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+}
+
+#focus-mode, #focus-mode h2, #focus-mode h3, #focus-mode span {
+    color: white !important;
+}
+
+#focus-mode .glass-panel {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
 }
 
 .preset-grid {
@@ -1273,7 +1289,7 @@ label {
 }
 
 /* Mobile Responsiveness */
-/* MODAL SYSTEM */
+/* MODAL SYSTEM: PANDA THEME Auth */
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -1292,6 +1308,98 @@ label {
     position: relative;
     border: 1px solid rgba(139, 92, 246, 0.3);
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(139, 92, 246, 0.1);
+}
+
+/* Specific Panda Theme strictly for Auth */
+#auth-modal .modal-content {
+    background: #ffffff;
+    color: #000000;
+    border: 4px solid #000;
+    border-radius: 24px;
+    box-shadow: 8px 8px 0px #000;
+}
+
+#auth-modal h2 {
+    color: #000;
+    font-weight: 900;
+    letter-spacing: -0.05em;
+}
+
+#auth-modal .control-btn {
+    border: 2px solid #000;
+    background: #f8fafc;
+    color: #000;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#auth-modal .control-btn:hover {
+    background: #000;
+    color: #fff;
+}
+
+.panda-input-group {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.panda-input-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #000;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.panda-input {
+    width: 100%;
+    background: #f8fafc;
+    border: 3px solid #000;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    color: #000;
+    outline: none;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.panda-input:focus {
+    box-shadow: 4px 4px 0px #000;
+    transform: translate(-4px, -4px);
+}
+
+.panda-btn {
+    width: 100%;
+    background: #000;
+    color: #fff;
+    border: 3px solid #000;
+    padding: 1.25rem;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    margin-top: 1rem;
+}
+
+.panda-btn:hover {
+    background: #fff;
+    color: #000;
+    box-shadow: 6px 6px 0px #000;
+    transform: translate(-4px, -4px);
 }
 
 .modal-overlay.active {
