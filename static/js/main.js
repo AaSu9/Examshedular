@@ -327,9 +327,9 @@ function toggleSubject(event, name, defaultDiff) {
 function prepareDateInputs() {
     navigateTo(3);
     const container = document.getElementById('exam-date-inputs');
-    const defaultDate = new Date();
-    defaultDate.setDate(defaultDate.getDate() + 15);
-    const dateStr = defaultDate.toISOString().split('T')[0];
+    
+    // Default to today or the BS date from DB
+    const defaultBS = db.today_bs || "2081-12-30"; 
     
     container.innerHTML = selectedSubjects.map(s => `
         <div class="glass-card" style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; border: 1px solid #e2e8f0; background: white; border-radius: 16px;">
@@ -337,9 +337,26 @@ function prepareDateInputs() {
                 <div style="font-weight: 800; font-size: 1.1rem;">${s.name}</div>
                 <div style="font-size: 0.75rem; opacity: 0.6;">DIFF: ${s.difficulty === 3 ? 'HARD' : s.difficulty === 2 ? 'MED' : 'EASY'}</div>
             </div>
-            <input type="date" class="exam-date-input" data-subject="${s.name}" data-difficulty="${s.difficulty}" value="${dateStr}" style="width: 180px; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border);">
+            <input type="text" 
+                   class="exam-date-input nepali-datepicker" 
+                   data-subject="${s.name}" 
+                   data-difficulty="${s.difficulty}" 
+                   value="${defaultBS}" 
+                   placeholder="YYYY-MM-DD (BS)"
+                   style="width: 180px; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border);">
         </div>
     `).join('');
+
+    // Initialize the pickers
+    setTimeout(() => {
+        document.querySelectorAll('.nepali-datepicker').forEach(el => {
+            $(el).nepaliDatePicker({
+                ndpYear: true,
+                ndpMonth: true,
+                ndpYearCount: 20
+            });
+        });
+    }, 100);
 }
 
 async function generateSchedule() {

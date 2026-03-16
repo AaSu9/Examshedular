@@ -98,14 +98,14 @@ def get_micro_plan(subject_name: str, focus_area: str, daily_hours: float, sessi
             "minutes": int(duration_val)
         })
         
-        remaining_minutes = float(remaining_minutes) - float(duration_val)
-        accumulated_study = float(accumulated_study) + float(duration_val)
-        sessions_count = int(sessions_count) + 1
+        remaining_minutes -= duration_val
+        accumulated_study += duration_val
+        sessions_count += 1
         current_time = end_time
         
-        if float(remaining_minutes) <= 0: break
+        if remaining_minutes <= 0: break
         
-        if float(accumulated_study) >= 180.0:
+        if accumulated_study >= 180.0:
             long_break = 60
             end_time = current_time + timedelta(minutes=long_break)
             plan.append({
@@ -114,16 +114,16 @@ def get_micro_plan(subject_name: str, focus_area: str, daily_hours: float, sessi
                 "type": "full-break",
                 "minutes": long_break
             })
-            accumulated_study = 0
+            accumulated_study = 0.0
             current_time = end_time
         else:
-            duration = float(break_mins)
-            end_time = current_time + timedelta(minutes=duration)
+            duration_break = float(break_mins)
+            end_time = current_time + timedelta(minutes=duration_break)
             plan.append({
                 "time": f"{current_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}",
                 "activity": "Micro-Break (20-20-20 Rule)",
                 "type": "break",
-                "minutes": int(duration)
+                "minutes": int(duration_break)
             })
             current_time = end_time
         
@@ -140,8 +140,12 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
     prepared_exams = []
     for ex in exams_list:
         try:
-            # Parse the incoming date from HTML5 <input type="date"> as Gregorian (AD)
-            ad_date = datetime.strptime(ex['date'], '%Y-%m-%d').date()
+            # Detect if it's a Nepali BS date (Bikram Sambat)
+            year = int(ex['date'].split('-')[0])
+            if year > 2060:
+                ad_date = bs_to_ad(ex['date'])
+            else:
+                ad_date = datetime.strptime(ex['date'], '%Y-%m-%d').date()
             prepared_exams.append({
                 **ex,
                 'ad_date': ad_date,
