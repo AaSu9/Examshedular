@@ -8,11 +8,14 @@ let focusModeActive = false;
 let completedDays = JSON.parse(localStorage.getItem('padsala_completed_days') || "[]");
 let focusXP = parseInt(localStorage.getItem('padsala_xp') || "0");
 let concentrationStreak = parseInt(localStorage.getItem('padsala_streak') || "0");
-let savedSchedules = JSON.parse(localStorage.getItem('padsala_saved_schedules') || "[]");
+let savedSchedules = []; // Loaded per-user after auth check — never shared across accounts
 let currentSchedule = null;
 let wizardInputs = JSON.parse(localStorage.getItem('padsala_wizard_inputs') || "{}");
 let isLoggedIn = false;
 let currentUsername = "";
+
+// Per-user storage key — prevents plans from bleeding across accounts
+function plansKey() { return `padsala_plans_${currentUsername || 'guest'}`; }
 
 const RANKS = [
     { min: 0, title: "Beginner" },
@@ -1066,10 +1069,12 @@ async function handleAuth(type) {
 
         if (data.success) {
             if (type === 'login') {
+                // Clear stale local plans BEFORE syncing — prevents cross-account leakage
+                savedSchedules = [];
                 isLoggedIn = true;
                 currentUsername = data.user.username;
                 updateAuthUI();
-                await syncSchedules();
+                await syncSchedules(); // Will now use the correct per-user key
                 closeAuthModal();
                 
                 // v18: Handle Admin Redirect
@@ -1118,10 +1123,9 @@ async function syncSchedules() {
         const res = await fetch('/api/sync/schedules');
         if (res.ok) {
             const data = await res.json();
-            if (data.length > 0) {
-                savedSchedules = data;
-                localStorage.setItem('padsala_saved_schedules', JSON.stringify(data));
-            }
+            // Always replace local plans with server-side plans for THIS user
+            savedSchedules = Array.isArray(data) ? data : [];
+            localStorage.setItem(plansKey(), JSON.stringify(savedSchedules));
         }
     } catch (e) { console.error("Sync error", e); }
 }
