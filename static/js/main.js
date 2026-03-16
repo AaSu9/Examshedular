@@ -206,48 +206,89 @@ function updateSubjects() {
     if (u && f && c && s && db[u]?.[f]?.[c]?.[s]) {
         document.getElementById('subject-selection-zone').style.display = 'block';
         const semSubjects = db[u][f][c][s];
-        
-        // Find elective placeholders in this semester (subjects named "Elective I", "Elective II" etc.)
-        // and merge the actual elective subject choices from their groups
-        let allSubjects = { ...semSubjects };
         const courseData = db[u][f][c];
-        Object.keys(semSubjects).forEach(subName => {
-            if (subName.startsWith('Elective') && courseData[subName]) {
-                // Remove the placeholder entry (e.g. "Elective I")
-                delete allSubjects[subName];
-                // Add all actual elective subjects from that group
-                Object.keys(courseData[subName]).forEach(electiveSub => {
-                    allSubjects[electiveSub] = { ...courseData[subName][electiveSub], is_elective: true, _group: subName };
-                });
+        
+        let html = '';
+
+        Object.keys(semSubjects).forEach(name => {
+            const info = semSubjects[name];
+
+            // Check if this subject is an elective GROUP placeholder (e.g. "Elective I")
+            if (name.startsWith('Elective') && courseData[name]) {
+                // Render as expandable elective picker
+                const chosenElective = selectedSubjects.find(sub => sub._group === name);
+                html += `
+                    <div class="elective-group" style="grid-column: 1 / -1; border: 2px dashed #d946ef; border-radius: 16px; padding: 1.2rem; background: linear-gradient(135deg, rgba(217,70,239,0.05), rgba(139,92,246,0.05));">
+                        <div onclick="toggleElectivePanel('${name}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 800; color: #d946ef; font-size: 1rem;">✦ ${name} — Choose One</div>
+                                <div style="font-size: 0.75rem; opacity: 0.7; margin-top: 2px;">
+                                    ${chosenElective ? `✅ Selected: <strong>${chosenElective.name}</strong>` : 'Click to select your elective subject'}
+                                </div>
+                            </div>
+                            <div id="elective-arrow-${name.replace(/\s/g,'-')}" style="font-size: 1.4rem; transition: transform 0.3s;">▼</div>
+                        </div>
+                        <div id="elective-panel-${name.replace(/\s/g,'-')}" style="display:none; margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.8rem;">
+                            ${Object.keys(courseData[name]).map(eName => `
+                                <div onclick="pickElective('${name}', '${eName.replace(/'/g,"\\'")}', ${courseData[name][eName].difficulty || 2})"
+                                     style="padding: 0.9rem; border-radius: 12px; cursor: pointer; text-align: center; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;
+                                            background: ${chosenElective?.name === eName ? '#d946ef' : 'rgba(255,255,255,0.08)'};
+                                            color: ${chosenElective?.name === eName ? 'white' : 'inherit'};
+                                            border: 1.5px solid ${chosenElective?.name === eName ? '#d946ef' : 'rgba(217,70,239,0.3)'};
+                                            transform: ${chosenElective?.name === eName ? 'scale(1.03)' : 'scale(1)'}"
+                                     onmouseover="this.style.borderColor='#d946ef'"
+                                     onmouseout="this.style.borderColor='${chosenElective?.name === eName ? '#d946ef' : 'rgba(217,70,239,0.3)'}'">
+                                    ${eName}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Regular subject card
+                const isSelected = selectedSubjects.some(sub => sub.name === name);
+                const subObj = selectedSubjects.find(sub => sub.name === name) || { difficulty: info.difficulty || 2 };
+                html += `
+                    <div class="glass-card subject-card ${isSelected ? 'selected' : ''}" 
+                         style="padding: 1.2rem; border: 1px solid ${isSelected ? 'var(--primary)' : 'var(--glass-border)'}; position: relative; transition: all 0.3s; cursor:pointer;"
+                         onclick="toggleSubject(event, '${name.replace(/'/g, "\\'")}', ${info.difficulty || 2})">
+                        <div style="font-weight: 700; margin-bottom: 0.8rem; color: ${isSelected ? 'var(--primary)' : 'inherit'}">${name}</div>
+                        <div class="difficulty-picker" onclick="event.stopPropagation()" style="display: flex; gap: 4px;">
+                            ${[1, 2, 3].map(d => `
+                                <div onclick="setSubDifficulty('${name.replace(/'/g, "\\'")}', ${d})" 
+                                     style="flex: 1; height: 6px; border-radius: 3px; background: ${subObj.difficulty >= d ? (d === 3 ? '#ef4444' : d === 2 ? '#fbbf24' : '#22c55e') : '#e2e8f0'}; cursor: pointer;">
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div style="font-size: 0.65rem; margin-top: 4px; opacity: 0.6;">
+                            LEVEL: ${subObj.difficulty === 3 ? 'HARD' : subObj.difficulty === 2 ? 'MED' : 'EASY'}
+                        </div>
+                    </div>
+                `;
             }
         });
 
-        document.getElementById('subjects-grid').innerHTML = Object.keys(allSubjects).map(name => {
-            const info = allSubjects[name];
-            const isSelected = selectedSubjects.some(sub => sub.name === name);
-            const subObj = selectedSubjects.find(sub => sub.name === name) || { difficulty: info.difficulty || 2 };
-            
-            return `
-                <div class="glass-card subject-card ${isSelected ? 'selected' : ''}" 
-                     style="padding: 1.2rem; border: 1px solid ${isSelected ? 'var(--primary)' : 'var(--glass-border)'}; position: relative; transition: all 0.3s;"
-                     onclick="toggleSubject(event, '${name.replace(/'/g, "\\'")}', ${info.difficulty})">
-                    <div style="font-weight: 700; margin-bottom: 0.8rem; color: ${isSelected ? 'var(--primary)' : 'inherit'}">${name}</div>
-                    
-                    <div class="difficulty-picker" onclick="event.stopPropagation()" style="display: flex; gap: 4px;">
-                        ${[1, 2, 3].map(d => `
-                            <div onclick="setSubDifficulty('${name.replace(/'/g, "\\'")}', ${d})" 
-                                 style="flex: 1; height: 6px; border-radius: 3px; background: ${subObj.difficulty >= d ? (d === 3 ? '#ef4444' : d === 2 ? '#fbbf24' : '#22c55e') : '#e2e8f0'}; cursor: pointer;">
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div style="font-size: 0.65rem; margin-top: 4px; opacity: 0.6; display: flex; justify-content: space-between;">
-                        <span>LEVEL: ${subObj.difficulty === 3 ? 'HARD' : subObj.difficulty === 2 ? 'MED' : 'EASY'}</span>
-                        ${info.is_elective ? `<span style="color: #d946ef;">✦ ${info._group || 'ELECTIVE'}</span>` : ''}
-                    </div>
-                </div>
-            `;
-        }).join('');
+        document.getElementById('subjects-grid').innerHTML = html;
     }
+}
+
+function toggleElectivePanel(groupName) {
+    const panelId = 'elective-panel-' + groupName.replace(/\s/g, '-');
+    const arrowId = 'elective-arrow-' + groupName.replace(/\s/g, '-');
+    const panel = document.getElementById(panelId);
+    const arrow = document.getElementById(arrowId);
+    if (!panel) return;
+    const isOpen = panel.style.display !== 'none';
+    panel.style.display = isOpen ? 'none' : 'grid';
+    if (arrow) arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
+function pickElective(groupName, subjectName, difficulty) {
+    // Remove any previous selection from this elective group
+    selectedSubjects = selectedSubjects.filter(s => s._group !== groupName);
+    // Add the new selection
+    selectedSubjects.push({ name: subjectName, difficulty, is_elective: true, _group: groupName });
+    updateSubjects();
 }
 
 function setSubDifficulty(name, diff) {
