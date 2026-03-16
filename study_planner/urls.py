@@ -14,4 +14,7 @@ urlpatterns = [
     path('api/v17/sync-xp', views.sync_xp, name='sync_xp'),
     path('api/v17/leaderboard', views.get_leaderboard, name='get_leaderboard'),
     path('api/auth/status', views.auth_status, name='auth_status'),
+    path('api/auth/login', views.login_user, name='login_user'),
+    path('api/auth/register', views.register_user, name='register_user'),
+    path('api/auth/logout', views.logout_user, name='logout_user'),
 ]

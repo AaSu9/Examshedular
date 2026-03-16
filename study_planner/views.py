@@ -7,6 +7,7 @@ from planner import generate_study_plan, get_micro_plan
 import json
 from datetime import datetime, timedelta
 import nepali_datetime
+from django.contrib.auth import authenticate, login, logout
 
 def index(request):
     return render(request, 'index.html')
@@ -186,6 +187,45 @@ def get_leaderboard(request):
     top = CustomUser.objects.order_by('-xp')[:10]
     leaderboard = [{"username": u.username, "xp": u.xp, "streak": u.streak} for u in top]
     return JsonResponse({"leaderboard": leaderboard, "user_rank": 0})
+
+@csrf_exempt
+def login_user(request):
+    if request.method != 'POST': return JsonResponse({"error": "Method not allowed"}, status=405)
+    data = json.loads(request.body)
+    username = data.get('username')
+    password = data.get('password')
+    
+    user = authenticate(request, username=username, password=password)
+    if user is not None:
+        login(request, user)
+        # Check if administrative access is needed
+        redirect_url = None
+        if user.is_staff or user.is_superuser:
+            redirect_url = '/admin/'
+            
+        return JsonResponse({
+            "success": True, 
+            "user": {"username": user.username, "email": user.email},
+            "redirect": redirect_url
+        })
+    return JsonResponse({"success": False, "error": "Invalid credentials"}, status=401)
+
+@csrf_exempt
+def register_user(request):
+    if request.method != 'POST': return JsonResponse({"error": "Method not allowed"}, status=405)
+    data = json.loads(request.body)
+    username = data.get('username')
+    password = data.get('password')
+    
+    if CustomUser.objects.filter(username=username).exists():
+        return JsonResponse({"success": False, "error": "Identity already taken"}, status=400)
+    
+    user = CustomUser.objects.create_user(username=username, password=password)
+    return JsonResponse({"success": True})
+
+def logout_user(request):
+    logout(request)
+    return JsonResponse({"success": True})
 
 def auth_status(request):
     if request.user.is_authenticated:
