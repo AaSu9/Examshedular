@@ -347,16 +347,19 @@ function prepareDateInputs() {
         </div>
     `).join('');
 
-    // Initialize the pickers
+    // Initialize the pickers with Vanilla JS
     setTimeout(() => {
         document.querySelectorAll('.nepali-datepicker').forEach(el => {
-            $(el).nepaliDatePicker({
-                ndpYear: true,
-                ndpMonth: true,
-                ndpYearCount: 20
-            });
+            if (el.nepaliDatePicker) {
+                el.nepaliDatePicker({
+                    ndpYear: true,
+                    ndpMonth: true,
+                    ndpYearCount: 20,
+                    readOnlyInput: false
+                });
+            }
         });
-    }, 100);
+    }, 200);
 }
 
 async function generateSchedule() {
