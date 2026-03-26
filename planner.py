@@ -155,69 +155,69 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
             })
             continue
 
+        # 2. Select Top Subject for the Day
         next_exams = [e for e in prepared_exams if e['ad_date'] > date]
-        if not next_exams:
+        if not next_exams and not exam_today:
             final_days.append({
                 "id": f"day-{i}", "bs_date": ad_to_bs(date), "ad_date": str(date), "day_of_week": date.strftime("%A"),
-                "is_exam_day": bool(exam_today), "status": d_status, "subject": exam_today['name'] if exam_today else "None", "tasks": day_tasks
+                "is_exam_day": bool(exam_today), "status": d_status, "subject": "None", "tasks": day_tasks
             })
             continue
 
-        # 2. Process forced Revisions
-        revisions_today = [r for r in revision_queue if r['date'] == date and any(e['name'] == r['subject'] for e in next_exams)]
-        for rev in revisions_today:
-            if daily_mins_avail < 30: break
-            rev_mins = min(60, daily_mins_avail * 0.2) # max 20% of today for this revision
-            chunks, current_dt = get_micro_chunks(rev['subject'], "Spaced Revision", rev_mins, session_mins, break_mins, "revision", current_dt)
-            day_tasks.extend(chunks)
-            daily_mins_avail -= rev_mins
+        selected_subject = None
+        if exam_today:
+            selected_subject = exam_today['name']
+        else:
+            # Calculate Priority Scores to pick the ONE best subject
+            best_item = None
+            max_score = -1.0
             
-        # 3. Calculate Priority Scores for Study
-        subject_scores = []
-        total_score = 0.0
-        
-        for ex in next_exams:
-            s_name = ex['name']
-            days_left = max(0.1, float((ex['ad_date'] - date).days))
-            diff = float(ex['difficulty'])
-            topics_count = float(ex['total_topics'])
+            for ex in next_exams:
+                s_name = ex['name']
+                days_left = max(0.1, float((ex['ad_date'] - date).days))
+                diff = float(ex['difficulty'])
+                topics_count = float(ex['total_topics'])
+                
+                m_data = topic_mastery_map.get(s_name, {})
+                avg_mastery = sum(float(v) for v in m_data.values()) / len(m_data) / 100.0 if m_data else 0.0
+                
+                score = (diff * topics_count * (1.1 - avg_mastery)) / days_left
+                if score > max_score:
+                    max_score = score
+                    best_item = {"ex": ex, "score": score}
             
-            # Avg mastery
-            m_data = topic_mastery_map.get(s_name, {})
-            avg_mastery = 0.0
-            if m_data:
-                avg_mastery = sum(float(v) for v in m_data.values()) / len(m_data) / 100.0
-                
-            score = (diff * topics_count * (1.1 - avg_mastery)) / days_left
-            subject_scores.append({"ex": ex, "score": score})
-            total_score += score
+            if best_item:
+                selected_subject = best_item['ex']['name']
+
+        # 3. Process Revisions (ONLY for the selected subject)
+        if selected_subject:
+            revisions_today = [r for r in revision_queue if r['date'] == date and r['subject'] == selected_subject]
+            for rev in revisions_today:
+                if daily_mins_avail < 30: break
+                rev_mins = min(90, daily_mins_avail * 0.3) # Dedicate up to 30% for revision if needed
+                chunks, current_dt = get_micro_chunks(rev['subject'], "Spaced Revision", rev_mins, session_mins, break_mins, "revision", current_dt)
+                day_tasks.extend(chunks)
+                daily_mins_avail -= rev_mins
             
-        # 4. Distribute remaining time
-        if total_score > 0:
-            for item in subject_scores:
-                s_name = item['ex']['name']
-                alloc_mins = (item['score'] / total_score) * daily_mins_avail
-                
-                # Minimum 30 mins to bother studying it, unless it's the only one
-                if alloc_mins < 30 and len(subject_scores) > 1:
-                    continue
-                    
-                # Anti-overload: max 4 hours per subject per day
-                alloc_mins = min(alloc_mins, 240)
-                
-                chaps = item['ex']['chapters']
+        # 4. Allocate remaining time to the ONE Selected Subject
+        if selected_subject and daily_mins_avail >= 30:
+            # Find the full exam object for the selected subject
+            target_ex = next((e for e in prepared_exams if e['name'] == selected_subject), None)
+            if target_ex:
+                chaps = target_ex['chapters']
                 focus = str(chaps[0]) if chaps else "Core Concepts"
                 
-                chunks, current_dt = get_micro_chunks(s_name, focus, alloc_mins, session_mins, break_mins, "study", current_dt)
+                # No 4-hour cap; use all available time for deep study
+                chunks, current_dt = get_micro_chunks(selected_subject, focus, daily_mins_avail, session_mins, break_mins, "study", current_dt)
                 day_tasks.extend(chunks)
                 
                 # Schedule future revisions
-                if s_name not in last_studied_date or last_studied_date[s_name] != date:
-                    revision_queue.append({"subject": s_name, "date": date + timedelta(days=1), "type": "rev-1"})
-                    revision_queue.append({"subject": s_name, "date": date + timedelta(days=3), "type": "rev-2"})
-                    revision_queue.append({"subject": s_name, "date": item['ex']['ad_date'] - timedelta(days=1), "type": "rev-3"})
+                if selected_subject not in last_studied_date or last_studied_date[selected_subject] != date:
+                    revision_queue.append({"subject": selected_subject, "date": date + timedelta(days=1), "type": "rev-1"})
+                    revision_queue.append({"subject": selected_subject, "date": date + timedelta(days=3), "type": "rev-2"})
+                    revision_queue.append({"subject": selected_subject, "date": target_ex['ad_date'] - timedelta(days=1), "type": "rev-3"})
                 
-                last_studied_date[s_name] = date
+                last_studied_date[selected_subject] = date
                 
         # Buffer at end of day
         end_c = current_dt + timedelta(minutes=15)
@@ -230,7 +230,7 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
             "day_of_week": date.strftime("%A"),
             "is_exam_day": bool(exam_today),
             "status": d_status,
-            "subject": "Multiple",
+            "subject": selected_subject if selected_subject else "Break/Buffer",
             "tasks": day_tasks
         })
 
