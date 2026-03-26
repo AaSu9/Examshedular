@@ -572,20 +572,28 @@ function renderCalendarGrid(days, clientDateStr) {
         const examClass = day.is_exam_day ? 'is-exam' : '';
         const subColor = getSubjectColor(day.subject);
 
-        let dayNum = day.bs_date.split('-')[2];
+        let dayNum = day.bs_date ? day.bs_date.split('-')[2] : '??';
         if (day.ad_date) dayNum = day.ad_date.split('-')[2];
 
         const examIndicator = day.is_exam_day
-            ? `<div style="font-size:0.6rem; color:#22c55e; font-weight:800; text-shadow: 0 0 10px rgba(34, 197, 94, 0.4);">EXAM DAY</div>`
+            ? `<div style="font-size:0.55rem; color:#22c55e; font-weight:900; text-transform:uppercase; margin-top:2px;">EXAM</div>`
             : '';
 
-        const dayName = new Date(day.ad_date + 'T00:00:00').toLocaleDateString('en-US', {weekday: 'short'});
+        const dayName = day.ad_date ? new Date(day.ad_date + 'T00:00:00').toLocaleDateString('en-US', {weekday: 'short'}) : '';
+
+        // Perfected Color Styling
+        const cellStyle = `
+            border-left: 4px solid ${subColor}; 
+            background: linear-gradient(135deg, ${subColor}15 0%, rgba(255,255,255,0.02) 100%);
+            ${day.is_exam_day ? 'border: 2px solid #22c55e; background: rgba(34, 197, 94, 0.1);' : ''}
+            ${isToday ? 'box-shadow: 0 0 15px ' + subColor + '44; border: 1px solid ' + subColor + ';' : ''}
+        `;
 
         gridHtml += `
             <div class="calendar-day ${statusClass} ${examClass}" onclick="editDayHours(${idx})" 
-                 style="${day.is_exam_day ? 'border-color: #22c55e; background: rgba(34, 197, 94, 0.1);' : ''}">
-                <div class="cal-date" style="${isToday ? '' : 'opacity:0.6'}">${dayNum} <span style="font-size:0.6rem; opacity:0.7;">${dayName}</span></div>
-                <div class="cal-subject" style="color: ${subColor};">${day.subject}</div>
+                 style="${cellStyle}">
+                <div class="cal-date" style="${isToday ? 'color:white; font-weight:800;' : 'opacity:0.6'}">${dayNum} <span style="font-size:0.5rem; opacity:0.8;">${dayName}</span></div>
+                <div class="cal-subject" style="color: ${subColor}; font-weight: 700; font-size: 0.7rem; line-height: 1.1; margin-top: 4px;">${day.subject}</div>
                 ${examIndicator}
             </div>
         `;
