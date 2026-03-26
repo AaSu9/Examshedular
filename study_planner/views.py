@@ -3,7 +3,7 @@ from django.db.models import Avg, Sum
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import University, Faculty, Course, Semester, Subject, Chapter, SavedSchedule, CustomUser, TopicMastery, SessionStats, StudyPlan
-from planner import generate_study_plan, get_micro_plan
+from planner import generate_study_plan, get_micro_chunks
 import json
 from datetime import datetime, timedelta
 import nepali_datetime
@@ -92,13 +92,19 @@ def replan_day(request):
     if request.method != 'POST': return JsonResponse({"error": "Method not allowed"}, status=405)
     try:
         data = json.loads(request.body)
-        tasks = get_micro_plan(
+        daily_hours = int(data.get('hours', 8))
+        session_mins = int(data.get('session_mins', 90))
+        break_mins = int(data.get('break_mins', 15))
+        start_str = data.get('start_time', "06:00")
+        current_dt = datetime.combine(datetime.now().date(), datetime.strptime(start_str, "%H:%M").time())
+        tasks, _ = get_micro_chunks(
             data.get('subject'),
             data.get('focus', 'Revision'),
-            int(data.get('hours', 8)),
-            int(data.get('session_mins', 90)),
-            int(data.get('break_mins', 15)),
-            data.get('start_time', "06:00")
+            float(daily_hours) * 60,
+            session_mins,
+            break_mins,
+            'study',
+            current_dt
         )
         return JsonResponse({"tasks": tasks})
     except Exception as e:
