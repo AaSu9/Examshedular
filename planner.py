@@ -156,8 +156,8 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
             continue
     
     prepared_exams.sort(key=lambda x: x['ad_date'])
-    nepal_now = datetime.utcnow() + timedelta(hours=5, minutes=45)
-    today_ad = nepal_now.date()
+    laptop_now = datetime.now()
+    today_ad = laptop_now.date()
     
     if not prepared_exams:
         return {"status": "error", "message": "No exams found"}
@@ -186,6 +186,16 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
         if date in exam_map:
             ex = exam_map[date]
             d_st = "today" if date == today_ad else "upcoming"
+            
+            effective_start_time = start_time
+            if d_st == "today":
+                now_time = datetime.now()
+                start_dt = datetime.strptime(start_time, "%H:%M")
+                if now_time.time() > start_dt.time():
+                    next_hour = now_time.hour + 1 if now_time.minute > 0 else now_time.hour
+                    if next_hour >= 23: next_hour = 22
+                    effective_start_time = f"{next_hour:02d}:00"
+                    
             final_days.append({
                 "id": f"day-{i}",
                 "bs_date": ad_to_bs(date),
@@ -193,7 +203,7 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
                 "is_exam_day": True,
                 "status": d_st,
                 "subject": ex['name'],
-                "tasks": get_micro_plan(ex['name'], "EXAM PREP", daily_study_hours, session_mins, break_mins, is_exam=True, start_time_str=start_time)
+                "tasks": get_micro_plan(ex['name'], "EXAM PREP", daily_study_hours, session_mins, break_mins, is_exam=True, start_time_str=effective_start_time)
             })
             continue
 
@@ -210,7 +220,8 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
             done = float(chapter_idx_map.get(s_name, 0.0))
             cov = max(1.0, tot - done) / tot
             
-            diff = 1.0 + (float(ex_obj.get('difficulty', 2)) * 0.2)
+            # Boosted difficulty multiplier to ensure difficult subjects get more days
+            diff = 1.0 + (float(ex_obj.get('difficulty', 2)) * 0.8)
             mast = 1.5
             if topic_mastery_map and s_name in topic_mastery_map:
                 m_data = topic_mastery_map[s_name]
@@ -248,10 +259,25 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
             chapter_idx_map[best_name] = c_idx_ext + 1
 
         d_status = "today" if date == today_ad else "upcoming"
+        
+        effective_start_time = start_time
+        if d_status == "today":
+            now_time = datetime.now()
+            start_dt = datetime.strptime(start_time, "%H:%M")
+            if now_time.time() > start_dt.time():
+                next_hour = now_time.hour + 1 if now_time.minute > 0 else now_time.hour
+                if next_hour >= 23: next_hour = 22
+                effective_start_time = f"{next_hour:02d}:00"
+                
         w_hours = float(daily_study_hours)
         b_diff = int(best_ex.get('difficulty', 2))
         if b_diff == 3: w_hours *= 1.5
         w_hours = min(14.0, w_hours)
+
+        if d_status == "today" and effective_start_time != start_time:
+            # Adjust today's available study hours based on the later start time
+            start_h = int(effective_start_time.split(':')[0])
+            w_hours = max(2.0, min(w_hours, float(24 - start_h)))
 
         final_days.append({
             "id": f"day-{i}",
@@ -261,7 +287,7 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
             "status": d_status,
             "subject": best_name,
             "daily_focus": f_area,
-            "tasks": get_micro_plan(best_name, f_area, w_hours, session_mins, break_mins, start_time_str=start_time)
+            "tasks": get_micro_plan(best_name, f_area, w_hours, session_mins, break_mins, start_time_str=effective_start_time)
         })
         
     return {
