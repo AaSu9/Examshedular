@@ -653,6 +653,7 @@ function renderFocusCard(days, clientDateStr) {
             <div style="text-align: center; margin-bottom: 2rem;">
                 <div style="font-size: 0.9rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">Current Protocol</div>
                 <h2 style="font-size: 2.5rem; margin: 0; color: white;">${day.bs_date}</h2>
+                <div style="font-size: 1rem; color: #d946ef; font-weight: 800; margin-top: 0.3rem;">${day.day_of_week || ''} — ${day.ad_date}</div>
                 <div style="color: #a78bfa; font-weight: 700; font-size: 1.2rem; margin-top: 0.5rem;">Total Tasks: ${day.tasks.length}</div>
             </div>
 
