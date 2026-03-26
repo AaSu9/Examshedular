@@ -20,7 +20,9 @@ The system is currently hard-wired for the **Purbanchal University (PoU)** acade
 
 ### 1. 🧠 Adaptive Blueprint Engine
 *   **Micro-Planning**: Generates 15-minute granular study blocks.
-*   **Smart Status Logic**: Automatically tracks timeline progress using server-synchronized Nepal Time (UTC+5:45).
+*   **Smart Time Sync**: Automatically tracks timeline progress using your local device time.
+*   **Perfect Subject Balancing**: Advanced urgency and difficulty algorithms dynamically distribute study days to prevent single-subject monopolies.
+*   **Nepali Date Synchronization**: Perfect bidirectional mapping between AD and BS (Bikram Sambat) dates with robust format support.
 *   **Visual History**: Past days are automatically dimmed and marked as **DONE**; the current day pulses with a neon indicators.
 *   **Mastery Adaptation**: Subject density automatically adjusts based on your self-reported mastery levels.
 

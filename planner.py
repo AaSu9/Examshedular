@@ -12,151 +12,86 @@ def ad_to_bs(ad_date):
     np_date = nepali_datetime.date.from_datetime_date(ad_date)
     return np_date.strftime('%Y-%m-%d')
 
-def get_micro_plan(subject_name: str, focus_area: str, daily_hours: float, session_mins: float, break_mins: float, is_exam: bool = False, start_time_str: str = "06:00"):
-    """
-    Generates a high-precision plan with realistic daily routines (Meals, Buffer, Variety).
-    """
+def get_micro_chunks(subject_name: str, focus_area: str, allocated_mins: float, session_mins: float, break_mins: float, plan_type: str = "study", current_time: datetime = None):
     plan = []
+    remaining = float(allocated_mins)
     
-    if is_exam:
-        micro_plan = [
-            {"time": "05:00 - 06:30", "activity": f"Final Formula Polish: {subject_name}", "type": "study", "minutes": 90},
-            {"time": "07:00 - 08:00", "activity": "Energy Loading (Breakfast)", "type": "break", "minutes": 60},
-            {"time": "10:00 - 13:00", "activity": "OFFICIAL EXAM SESSION", "type": "exam", "minutes": 180},
-            {"time": "14:00 - 15:30", "activity": "Post-Exam Recovery & Meal", "type": "full-break", "minutes": 90},
-            {"time": "16:00 - 18:00", "activity": "Next Subject Pre-Scan", "type": "study", "minutes": 120}
-        ]
-        return micro_plan
-
-    remaining_minutes: float = float(daily_hours) * 60.0
-    session_mins_float: float = float(session_mins)
-    current_time = datetime.strptime(start_time_str, "%H:%M")
+    phases = ["Deep Work: Concepts", "Active Recall", "Past Paper Sprint", "Feynman Review"] if plan_type == "study" else ["Spaced Revision", "Weak Point Polish", "Flashcard Drill"]
+    sessions_count = 0
     
-    accumulated_study: float = 0.0
-    sessions_count: int = 0
-    
-    phases = ["Deep Work: Concepts", "Active Recall Session", "Past Paper Sprint", "Feynman Technique Review"]
-    
-    while float(remaining_minutes) > 0.0:
-        current_hour = int(current_time.hour)
-        if current_hour == 8:
-            has_breakfast = False
-            for p in plan:
-                if p.get('type') == 'meal' and 'Breakfast' in str(p.get('activity', '')):
-                    has_breakfast = True
-                    break
-            if not has_breakfast:
-                end_time = current_time + timedelta(minutes=45)
-                plan.append({
-                    "time": f"{current_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}",
-                    "activity": "Breakfast & Hydration",
-                    "type": "meal",
-                    "minutes": 45
-                })
-                current_time = end_time
-                continue
-        elif current_hour == 13:
-            has_lunch = False
-            for p in plan:
-                if p.get('type') == 'meal' and 'Lunch' in str(p.get('activity', '')):
-                    has_lunch = True
-                    break
-            if not has_lunch:
-                end_time = current_time + timedelta(minutes=60)
-                plan.append({
-                    "time": f"{current_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}",
-                    "activity": "Lunch & Mindful Rest",
-                    "type": "meal",
-                    "minutes": 60
-                })
-                current_time = end_time
-                continue
-        elif current_hour == 20:
-            has_dinner = False
-            for p in plan:
-                if p.get('type') == 'meal' and 'Dinner' in str(p.get('activity', '')):
-                    has_dinner = True
-                    break
-            if not has_dinner:
-                end_time = current_time + timedelta(minutes=60)
-                plan.append({
-                    "time": f"{current_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}",
-                    "activity": "Dinner & Family Time",
-                    "type": "meal",
-                    "minutes": 60
-                })
-                current_time = end_time
-                continue
-
-        duration_val = float(min(float(session_mins_float), float(remaining_minutes)))
-        end_time = current_time + timedelta(minutes=duration_val)
-        phase = phases[int(sessions_count) % len(phases)]
-        
+    while remaining > 0:
+        # Check for meals
+        current_hour = current_time.hour
+        if current_hour == 8 and not any('Breakfast' in p['activity'] for p in plan):
+            end_time = current_time + timedelta(minutes=45)
+            plan.append({"time": f"{current_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}", "activity": "Breakfast & Hydration", "type": "meal", "minutes": 45})
+            current_time = end_time
+            continue
+        elif current_hour == 13 and not any('Lunch' in p['activity'] for p in plan):
+            end_time = current_time + timedelta(minutes=60)
+            plan.append({"time": f"{current_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}", "activity": "Lunch & Mindful Rest", "type": "meal", "minutes": 60})
+            current_time = end_time
+            continue
+        elif current_hour == 20 and not any('Dinner' in p['activity'] for p in plan):
+            end_time = current_time + timedelta(minutes=60)
+            plan.append({"time": f"{current_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}", "activity": "Dinner & Family Time", "type": "meal", "minutes": 60})
+            current_time = end_time
+            continue
+            
+        dur = min(session_mins, remaining)
+        if dur < 15: # if less than 15 mins left, just append it to a break or skip
+            break
+            
+        end_time = current_time + timedelta(minutes=dur)
+        phase = phases[sessions_count % len(phases)]
         plan.append({
             "time": f"{current_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}",
-            "activity": f"{phase}: {focus_area}",
-            "type": "study",
-            "minutes": int(duration_val)
+            "activity": f"{phase}: {focus_area} ({subject_name})",
+            "type": plan_type,
+            "minutes": int(dur),
+            "subject": subject_name
         })
-        
-        remaining_minutes -= duration_val
-        accumulated_study += duration_val
-        sessions_count += 1
         current_time = end_time
+        remaining -= dur
+        sessions_count += 1
         
-        if remaining_minutes <= 0: break
-        
-        if accumulated_study >= 180.0:
-            long_break = 60
-            end_time = current_time + timedelta(minutes=long_break)
+        if remaining > 15:
+            # Add break
+            b_dur = break_mins if sessions_count % 3 != 0 else 45 # long break every 3 sessions
+            end_time = current_time + timedelta(minutes=b_dur)
             plan.append({
                 "time": f"{current_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}",
-                "activity": "Full Reset (Walk/Nap/Shower)",
-                "type": "full-break",
-                "minutes": long_break
-            })
-            accumulated_study = 0.0
-            current_time = end_time
-        else:
-            duration_break = float(break_mins)
-            end_time = current_time + timedelta(minutes=duration_break)
-            plan.append({
-                "time": f"{current_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}",
-                "activity": "Micro-Break (20-20-20 Rule)",
+                "activity": "Deep Rest / Buffer" if b_dur == 45 else "Micro-Break (20-20-20)",
                 "type": "break",
-                "minutes": int(duration_break)
+                "minutes": int(b_dur)
             })
             current_time = end_time
-        
-    end_time = current_time + timedelta(minutes=15)
-    plan.append({
-        "time": f"{current_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}",
-        "activity": "Daily Reflection & Tomorrow's Goal",
-        "type": "buffer",
-        "minutes": 15
-    })
-    return plan
 
-def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, session_mins: float = 90.0, break_mins: float = 15.0, start_time: str = "06:00", topic_mastery_map: Optional[Dict] = None):
+    return plan, current_time
+
+def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, session_mins: float = 30.0, break_mins: float = 5.0, start_time: str = "06:00", topic_mastery_map: Optional[Dict] = None):
     prepared_exams = []
+    topic_mastery_map = topic_mastery_map or {}
+    
     for ex in exams_list:
         try:
-            # Detect if it's a Nepali BS date (Bikram Sambat)
             date_str = str(ex['date']).replace('/', '-')
             year = int(date_str.split('-')[0])
             if year > 2060:
                 ad_date = bs_to_ad(date_str)
             else:
                 ad_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                
+            chapters = ex.get('chapters', [])
             prepared_exams.append({
-                **ex,
+                'name': ex['name'],
                 'ad_date': ad_date,
-                'chapters': ex.get('chapters', []),
-                'difficulty': int(ex.get('difficulty', 2))
+                'chapters': chapters,
+                'difficulty': int(ex.get('difficulty', 2)),
+                'total_topics': len(chapters) if chapters else 1
             })
-        except:
-            continue
-    
+        except: continue
+        
     prepared_exams.sort(key=lambda x: x['ad_date'])
     laptop_now = datetime.now()
     today_ad = laptop_now.date()
@@ -170,102 +105,15 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
     while temp_date <= last_exam_ad:
         all_dates.append(temp_date)
         temp_date += timedelta(days=1)
-    
-    subject_total_chaps = {}
-    chapter_idx_map: Dict[str, Any] = {}
-    subject_day_count = {}
-    subject_total_allocated = {}
-    
-    for ex_item in prepared_exams:
-        s_name = str(ex_item['name'])
-        subject_total_chaps[s_name] = len(ex_item.get('chapters', []))
-        chapter_idx_map[s_name] = 0
-        subject_day_count[s_name] = 0
-        subject_total_allocated[s_name] = 0
-    
-    exam_map = {ex['ad_date']: ex for ex in prepared_exams}
+        
     final_days = []
-
+    
+    # Last studied tracker for revision
+    last_studied_date = {} # subject_name -> date
+    revision_queue = [] # list of {subject, date_to_revise, type}
+    
     for i, date in enumerate(all_dates):
-        if date in exam_map:
-            ex = exam_map[date]
-            d_st = "today" if date == today_ad else "upcoming"
-            
-            effective_start_time = start_time
-            if d_st == "today":
-                now_time = datetime.now()
-                start_dt = datetime.strptime(start_time, "%H:%M")
-                if now_time.time() > start_dt.time():
-                    next_hour = now_time.hour + 1 if now_time.minute > 0 else now_time.hour
-                    if next_hour >= 23: next_hour = 22
-                    effective_start_time = f"{next_hour:02d}:00"
-                    
-            final_days.append({
-                "id": f"day-{i}",
-                "bs_date": ad_to_bs(date),
-                "ad_date": str(date),
-                "is_exam_day": True,
-                "status": d_st,
-                "subject": ex['name'],
-                "tasks": get_micro_plan(ex['name'], "EXAM PREP", daily_study_hours, session_mins, break_mins, is_exam=True, start_time_str=effective_start_time)
-            })
-            continue
-
-        next_exams = [e for e in prepared_exams if e['ad_date'] > date]
-        if not next_exams: continue
-        
-        candidates = []
-        for ex_obj in next_exams:
-            s_name = str(ex_obj.get('name', ''))
-            days_left = float((ex_obj['ad_date'] - date).days)
-            urgency = 1.0 / (days_left + 1.5)
-            
-            tot = float(subject_total_chaps.get(s_name, 1.0))
-            done = float(chapter_idx_map.get(s_name, 0.0))
-            cov = max(1.0, tot - done) / tot
-            
-            # Boosted difficulty multiplier to ensure difficult subjects get more days
-            diff = 1.0 + (float(ex_obj.get('difficulty', 2)) * 0.8)
-            mast = 1.5
-            if topic_mastery_map and s_name in topic_mastery_map:
-                m_data = topic_mastery_map[s_name]
-                if m_data:
-                    avg_m = sum([float(v) for v in m_data.values()]) / len(m_data)
-                    mast = 1.0 + ((100.0 - avg_m) / 100.0)
-            
-            alloc_pen = 1.0 / (float(subject_total_allocated.get(s_name, 0)) + 1.0)
-            score = urgency * cov * diff * mast * alloc_pen
-            if float(subject_day_count.get(s_name, 0)) >= 2.0: score *= 0.1
-            candidates.append({"ex": ex_obj, "score": score})
-        
-        candidates.sort(key=lambda x: x['score'], reverse=True)
-        best_ex = candidates[0]['ex']
-        best_name = str(best_ex.get('name', ''))
-        subject_day_count[best_name] = int(subject_day_count.get(best_name, 0)) + 1
-        subject_total_allocated[best_name] = int(subject_total_allocated.get(best_name, 0)) + 1
-        for k in list(subject_day_count.keys()):
-            if k != best_name: subject_day_count[k] = 0
-
-        study_chaps = list(best_ex.get('chapters', []))
-        f_area = "Fundamental Concepts"
-        
-        if topic_mastery_map and best_name in topic_mastery_map:
-            m_data = topic_mastery_map[best_name]
-            if m_data:
-                low_topic = sorted(m_data.items(), key=lambda x: x[1])[0]
-                if float(low_topic[1]) < 40.0:
-                    f_area = str(low_topic[0])
-                elif study_chaps:
-                    c_idx = int(chapter_idx_map.get(best_name, 0))
-                    f_area = str(study_chaps[c_idx % len(study_chaps)])
-                    chapter_idx_map[best_name] = c_idx + 1
-        elif study_chaps:
-            c_idx_ext = int(chapter_idx_map.get(best_name, 0))
-            f_area = str(study_chaps[c_idx_ext % len(study_chaps)])
-            chapter_idx_map[best_name] = c_idx_ext + 1
-
         d_status = "today" if date == today_ad else "upcoming"
-        
         effective_start_time = start_time
         if d_status == "today":
             now_time = datetime.now()
@@ -275,27 +123,117 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
                 if next_hour >= 23: next_hour = 22
                 effective_start_time = f"{next_hour:02d}:00"
                 
-        w_hours = float(daily_study_hours)
-        b_diff = int(best_ex.get('difficulty', 2))
-        if b_diff == 3: w_hours *= 1.5
-        w_hours = min(14.0, w_hours)
-
+        daily_mins_avail = daily_study_hours * 60.0
         if d_status == "today" and effective_start_time != start_time:
-            # Adjust today's available study hours based on the later start time
             start_h = int(effective_start_time.split(':')[0])
-            w_hours = max(2.0, min(w_hours, float(24 - start_h)))
+            daily_mins_avail = max(120.0, min(daily_mins_avail, float(24 - start_h) * 60.0))
+            
+        current_dt = datetime.combine(date, datetime.strptime(effective_start_time, "%H:%M").time())
+        day_tasks = []
+        
+        # 1. Check if it's an exam day
+        exam_today = next((ex for ex in prepared_exams if ex['ad_date'] == date), None)
+        if exam_today:
+            end_c = current_dt + timedelta(minutes=90)
+            day_tasks.append({"time": f"{current_dt.strftime('%H:%M')} - {end_c.strftime('%H:%M')}", "activity": f"Final Polish: {exam_today['name']}", "type": "study", "minutes": 90, "subject": exam_today['name']})
+            current_dt = end_c
+            end_c = current_dt + timedelta(minutes=180)
+            day_tasks.append({"time": f"{current_dt.strftime('%H:%M')} - {end_c.strftime('%H:%M')}", "activity": "OFFICIAL EXAM", "type": "exam", "minutes": 180, "subject": exam_today['name']})
+            current_dt = end_c
+            
+            # Post-exam recovery
+            end_c = current_dt + timedelta(minutes=120)
+            day_tasks.append({"time": f"{current_dt.strftime('%H:%M')} - {end_c.strftime('%H:%M')}", "activity": "Post-Exam Recovery", "type": "break", "minutes": 120})
+            current_dt = end_c
+            daily_mins_avail -= 390
+            
+        if daily_mins_avail <= 0:
+            final_days.append({
+                "id": f"day-{i}", "bs_date": ad_to_bs(date), "ad_date": str(date), "day_of_week": date.strftime("%A"),
+                "is_exam_day": bool(exam_today), "status": d_status, "subject": exam_today['name'] if exam_today else "None",
+                "tasks": day_tasks
+            })
+            continue
 
+        next_exams = [e for e in prepared_exams if e['ad_date'] > date]
+        if not next_exams:
+            final_days.append({
+                "id": f"day-{i}", "bs_date": ad_to_bs(date), "ad_date": str(date), "day_of_week": date.strftime("%A"),
+                "is_exam_day": bool(exam_today), "status": d_status, "subject": exam_today['name'] if exam_today else "None", "tasks": day_tasks
+            })
+            continue
+
+        # 2. Process forced Revisions
+        revisions_today = [r for r in revision_queue if r['date'] == date and any(e['name'] == r['subject'] for e in next_exams)]
+        for rev in revisions_today:
+            if daily_mins_avail < 30: break
+            rev_mins = min(60, daily_mins_avail * 0.2) # max 20% of today for this revision
+            chunks, current_dt = get_micro_chunks(rev['subject'], "Spaced Revision", rev_mins, session_mins, break_mins, "revision", current_dt)
+            day_tasks.extend(chunks)
+            daily_mins_avail -= rev_mins
+            
+        # 3. Calculate Priority Scores for Study
+        subject_scores = []
+        total_score = 0.0
+        
+        for ex in next_exams:
+            s_name = ex['name']
+            days_left = max(0.1, float((ex['ad_date'] - date).days))
+            diff = float(ex['difficulty'])
+            topics_count = float(ex['total_topics'])
+            
+            # Avg mastery
+            m_data = topic_mastery_map.get(s_name, {})
+            avg_mastery = 0.0
+            if m_data:
+                avg_mastery = sum(float(v) for v in m_data.values()) / len(m_data) / 100.0
+                
+            score = (diff * topics_count * (1.1 - avg_mastery)) / days_left
+            subject_scores.append({"ex": ex, "score": score})
+            total_score += score
+            
+        # 4. Distribute remaining time
+        if total_score > 0:
+            for item in subject_scores:
+                s_name = item['ex']['name']
+                alloc_mins = (item['score'] / total_score) * daily_mins_avail
+                
+                # Minimum 30 mins to bother studying it, unless it's the only one
+                if alloc_mins < 30 and len(subject_scores) > 1:
+                    continue
+                    
+                # Anti-overload: max 4 hours per subject per day
+                alloc_mins = min(alloc_mins, 240)
+                
+                chaps = item['ex']['chapters']
+                focus = str(chaps[0]) if chaps else "Core Concepts"
+                
+                chunks, current_dt = get_micro_chunks(s_name, focus, alloc_mins, session_mins, break_mins, "study", current_dt)
+                day_tasks.extend(chunks)
+                
+                # Schedule future revisions
+                if s_name not in last_studied_date or last_studied_date[s_name] != date:
+                    revision_queue.append({"subject": s_name, "date": date + timedelta(days=1), "type": "rev-1"})
+                    revision_queue.append({"subject": s_name, "date": date + timedelta(days=3), "type": "rev-2"})
+                    revision_queue.append({"subject": s_name, "date": item['ex']['ad_date'] - timedelta(days=1), "type": "rev-3"})
+                
+                last_studied_date[s_name] = date
+                
+        # Buffer at end of day
+        end_c = current_dt + timedelta(minutes=15)
+        day_tasks.append({"time": f"{current_dt.strftime('%H:%M')} - {end_c.strftime('%H:%M')}", "activity": "Reflection & Next Day Prep", "type": "buffer", "minutes": 15})
+        
         final_days.append({
             "id": f"day-{i}",
             "bs_date": ad_to_bs(date),
             "ad_date": str(date),
-            "is_exam_day": False,
+            "day_of_week": date.strftime("%A"),
+            "is_exam_day": bool(exam_today),
             "status": d_status,
-            "subject": best_name,
-            "daily_focus": f_area,
-            "tasks": get_micro_plan(best_name, f_area, w_hours, session_mins, break_mins, start_time_str=effective_start_time)
+            "subject": "Multiple",
+            "tasks": day_tasks
         })
-        
+
     return {
         "status": "success",
         "days": final_days,

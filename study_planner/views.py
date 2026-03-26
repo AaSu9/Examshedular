@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.db.models import Avg, Sum
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import University, Faculty, Course, Semester, Subject, Chapter, SavedSchedule, CustomUser, TopicMastery, SessionStats
+from .models import University, Faculty, Course, Semester, Subject, Chapter, SavedSchedule, CustomUser, TopicMastery, SessionStats, StudyPlan
 from planner import generate_study_plan, get_micro_plan
 import json
 from datetime import datetime, timedelta
@@ -231,3 +231,59 @@ def auth_status(request):
     if request.user.is_authenticated:
         return JsonResponse({"logged_in": True, "username": request.user.username})
     return JsonResponse({"logged_in": False})
+
+@csrf_exempt
+def api_exam_plan(request):
+    if not request.user.is_authenticated: return JsonResponse({"error": "Unauthorized"}, status=401)
+    if request.method != 'POST': return JsonResponse({"error": "Method not allowed"}, status=405)
+    try:
+        data = json.loads(request.body)
+        exams = data.get('exams', [])
+        topic_mastery_map = {}
+        mastery_data = TopicMastery.objects.filter(user=request.user)
+        for m in mastery_data:
+            if m.subject not in topic_mastery_map: topic_mastery_map[m.subject] = {}
+            topic_mastery_map[m.subject][m.topic] = m.mastery_score
+            
+        schedule = generate_study_plan(
+            exams,
+            daily_study_hours=int(data.get('daily_hours', 8)),
+            session_mins=int(data.get('session_mins', 90)),
+            break_mins=int(data.get('break_mins', 15)),
+            start_time=data.get('start_time', "06:00"),
+            topic_mastery_map=topic_mastery_map
+        )
+        
+        if schedule.get("status") == "success":
+            StudyPlan.objects.filter(user=request.user).delete()
+            for day in schedule["days"]:
+                ad_date_obj = datetime.strptime(day["ad_date"], "%Y-%m-%d").date()
+                for task in day.get("tasks", []):
+                    StudyPlan.objects.create(
+                        user=request.user,
+                        date=ad_date_obj,
+                        subject=day["subject"],
+                        duration_mins=task["minutes"],
+                        plan_type=task["type"]
+                    )
+        
+        return JsonResponse(schedule, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+def api_today_plan(request):
+    if not request.user.is_authenticated: return JsonResponse({"error": "Unauthorized"}, status=401)
+    today = datetime.now().date()
+    plans = StudyPlan.objects.filter(user=request.user, date=today)
+    data = [{"subject": p.subject, "topic": p.topic, "duration_mins": p.duration_mins, "type": p.plan_type, "is_completed": p.is_completed} for p in plans]
+    return JsonResponse({"today": str(today), "plans": data})
+
+@csrf_exempt
+def api_update_mastery(request):
+    if not request.user.is_authenticated: return JsonResponse({"error": "Unauthorized"}, status=401)
+    if request.method != 'POST': return JsonResponse({"error": "Method not allowed"}, status=405)
+    data = json.loads(request.body)
+    tm, _ = TopicMastery.objects.get_or_create(user=request.user, subject=data.get('subject'), topic=data.get('topic'))
+    tm.mastery_score = max(0, min(100, tm.mastery_score + data.get('change', 0)))
+    tm.save()
+    return JsonResponse({"success": True, "mastery_score": tm.mastery_score})

@@ -34,6 +34,7 @@ class Subject(models.Model):
     semester = models.ForeignKey(Semester, on_delete=models.CASCADE, related_name='subjects')
     name = models.CharField(max_length=255)
     base_difficulty = models.IntegerField(default=2)
+    exam_date = models.DateField(null=True, blank=True)
     is_elective = models.BooleanField(default=False)
     def __str__(self): return self.name
 
@@ -67,3 +68,19 @@ class SessionStats(models.Model):
     idle_seconds = models.IntegerField(default=0)
     abandoned = models.BooleanField(default=False)
     timestamp = models.DateTimeField(auto_now_add=True)
+
+class StudyPlan(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='study_plans')
+    date = models.DateField()
+    subject = models.CharField(max_length=255)
+    topic = models.CharField(max_length=255, null=True, blank=True)
+    duration_mins = models.IntegerField(default=0)
+    plan_type = models.CharField(max_length=50, default='study') # 'study' or 'revision' or 'exam'
+    is_completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['date']
+        
+    def __str__(self):
+        return f"{self.user.username} - {self.date} - {self.subject} ({self.plan_type})"

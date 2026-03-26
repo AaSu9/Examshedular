@@ -610,33 +610,75 @@ function renderFocusCard(days, clientDateStr) {
     }
 
     const day = activeDay;
-    const isHoliday = day.tasks.length === 1 && day.tasks[0].activity.includes("HOLIDAY");
+    const isHoliday = day.tasks.length === 0;
 
-    html += `
+    // Build Exam Countdown HUD
+    let hudHtml = `<div style="display: flex; gap: 1rem; overflow-x: auto; margin-bottom: 2rem; padding-bottom: 0.5rem; -webkit-overflow-scrolling: touch;">`;
+    if (wizardInputs && wizardInputs.exams) {
+        wizardInputs.exams.forEach(ex => {
+            let daysLeft = 'Completed';
+            let priorityColor = '#22c55e'; // default green
+            
+            // Find exam day in 'days' array
+            const examDayIdx = days.findIndex(d => d.is_exam_day && d.tasks.some(t => t.subject === ex.name));
+            if (examDayIdx !== -1) {
+                if (examDayIdx > activeIdx) {
+                    daysLeft = (examDayIdx - activeIdx) + ' Days';
+                    if (daysLeft.startsWith('0')) daysLeft = 'Tomorrow';
+                    else if (daysLeft.startsWith('1 ')) daysLeft = '1 Day';
+                    
+                    if (examDayIdx - activeIdx <= 3) priorityColor = '#ef4444'; // Red (urgent)
+                    else if (examDayIdx - activeIdx <= 7) priorityColor = '#f97316'; // Orange
+                    else if (examDayIdx - activeIdx <= 14) priorityColor = '#eab308'; // Yellow
+                } else if (examDayIdx === activeIdx) {
+                    daysLeft = 'TODAY';
+                    priorityColor = '#d946ef'; // Pink
+                }
+            } else {
+                daysLeft = 'Ended';
+            }
+            
+            hudHtml += `
+            <div class="glass-card element-enter" style="flex: 0 0 auto; min-width: 160px; padding: 1rem; border-left: 4px solid ${priorityColor}; background: rgba(255,255,255,0.03);">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">${ex.name}</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: ${priorityColor}; line-height: 1;">${daysLeft}</div>
+                <div style="font-size: 0.65rem; opacity: 0.5; margin-top: 4px;">BS: ${ex.date}</div>
+            </div>`;
+        });
+    }
+    hudHtml += `</div>`;
+
+    html += hudHtml + `
         <div class="glass-card element-enter" style="width: 100%; max-width: 600px; padding: 2.5rem; border: 2px solid var(--primary); box-shadow: 0 0 40px rgba(139, 92, 246, 0.2);">
             <div style="text-align: center; margin-bottom: 2rem;">
                 <div style="font-size: 0.9rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">Current Protocol</div>
                 <h2 style="font-size: 2.5rem; margin: 0; color: white;">${day.bs_date}</h2>
-                <div style="color: #a78bfa; font-weight: 700; font-size: 1.2rem; margin-top: 0.5rem;">${day.subject}</div>
+                <div style="color: #a78bfa; font-weight: 700; font-size: 1.2rem; margin-top: 0.5rem;">Total Tasks: ${day.tasks.length}</div>
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 1rem;">
-                ${day.tasks.map(t => `
-                    <div style="background: rgba(255,255,255,0.05); padding: 1.2rem; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; ${isHoliday ? 'opacity: 0.7' : 'cursor: pointer; transition: transform 0.2s;'}" 
-                         ${!isHoliday ? `onclick="enterFocus('${day.subject}', '${t.activity.replace(/'/g, "\\'")}', ${t.minutes})"` : ''}
+                ${day.tasks.length === 0 ? '<div style="text-align:center; opacity:0.5;">No active tasks required.</div>' : ''}
+                ${day.tasks.map((t, idx) => {
+                    let taskColor = t.type === 'study' ? '#d946ef' : (t.type === 'revision' ? '#06b6d4' : (t.type === 'exam' ? '#22c55e' : 'var(--text-muted)'));
+                    return `
+                    <div class="task-row" style="background: rgba(255,255,255,0.05); padding: 1.2rem; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.2s; border-left: 3px solid ${taskColor};" 
+                         ${!['meal', 'break', 'full-break', 'buffer'].includes(t.type) ? `onclick="enterFocus('${t.subject || day.subject}', '${t.activity.replace(/'/g, "\\'")}', ${t.minutes})"` : ''}
                          onmouseover="this.style.background='rgba(255,255,255,0.1)'; this.style.transform='scale(1.02)'"
                          onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.transform='scale(1)'">
                         
                         <div style="display: flex; flex-direction: column;">
                             <span style="font-weight: 700; font-size: 1.1rem;">${t.activity}</span>
-                            <span style="font-size: 0.8rem; opacity: 0.6;">${t.type.toUpperCase()}</span>
+                            <span style="font-size: 0.75rem; opacity: 0.7; color: ${taskColor}; margin-top: 2px; text-transform: uppercase;">
+                                <i data-lucide="${t.type === 'study' ? 'book-open' : (t.type === 'revision' ? 'refresh-cw' : (t.type === 'exam' ? 'award' : 'coffee'))}" style="width: 12px; height: 12px; display:inline-block; vertical-align:middle; margin-right: 2px;"></i>
+                                ${t.type} ${t.subject ? `• ${t.subject}` : ''}
+                            </span>
                         </div>
                         <div style="text-align: right;">
-                            <div style="color: #d946ef; font-weight: 700;">${t.time}</div>
-                            <div style="font-size: 0.8rem; opacity: 0.6;">${t.minutes}m</div>
+                            <div style="color: #fff; font-weight: 800; font-size: 1rem;">${t.time}</div>
+                            <div style="font-size: 0.75rem; opacity: 0.6; margin-top: 2px;">${t.minutes} min</div>
                         </div>
                     </div>
-                `).join('')}
+                `}).join('')}
             </div>
             
              <div style="margin-top: 2rem; text-align: center;">
