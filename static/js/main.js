@@ -572,10 +572,12 @@ function renderCalendarGrid(days, clientDateStr) {
             ? `<div style="font-size:0.6rem; color:#22c55e; font-weight:800; text-shadow: 0 0 10px rgba(34, 197, 94, 0.4);">EXAM DAY</div>`
             : '';
 
+        const dayName = new Date(day.ad_date + 'T00:00:00').toLocaleDateString('en-US', {weekday: 'short'});
+
         gridHtml += `
             <div class="calendar-day ${statusClass} ${examClass}" onclick="editDayHours(${idx})" 
                  style="${day.is_exam_day ? 'border-color: #22c55e; background: rgba(34, 197, 94, 0.1);' : ''}">
-                <div class="cal-date" style="${isToday ? '' : 'opacity:0.6'}">${dayNum}</div>
+                <div class="cal-date" style="${isToday ? '' : 'opacity:0.6'}">${dayNum} <span style="font-size:0.6rem; opacity:0.7;">${dayName}</span></div>
                 <div class="cal-subject" style="color: ${subColor};">${day.subject}</div>
                 ${examIndicator}
             </div>
@@ -653,7 +655,7 @@ function renderFocusCard(days, clientDateStr) {
             <div style="text-align: center; margin-bottom: 2rem;">
                 <div style="font-size: 0.9rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">Current Protocol</div>
                 <h2 style="font-size: 2.5rem; margin: 0; color: white;">${day.bs_date}</h2>
-                <div style="font-size: 1rem; color: #d946ef; font-weight: 800; margin-top: 0.3rem;">${day.day_of_week || ''} — ${day.ad_date}</div>
+                <div style="font-size: 1rem; color: #d946ef; font-weight: 800; margin-top: 0.3rem;">${new Date(day.ad_date + 'T00:00:00').toLocaleDateString('en-US', {weekday: 'long'})} — ${day.ad_date}</div>
                 <div style="color: #a78bfa; font-weight: 700; font-size: 1.2rem; margin-top: 0.5rem;">Total Tasks: ${day.tasks.length}</div>
             </div>
 
