@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Any
 
 def bs_to_ad(bs_date_str):
+    bs_date_str = str(bs_date_str).replace('/', '-')
     y, m, d = map(int, bs_date_str.split('-'))
     np_date = nepali_datetime.date(y, m, d)
     return np_date.to_datetime_date()
@@ -141,11 +142,12 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
     for ex in exams_list:
         try:
             # Detect if it's a Nepali BS date (Bikram Sambat)
-            year = int(ex['date'].split('-')[0])
+            date_str = str(ex['date']).replace('/', '-')
+            year = int(date_str.split('-')[0])
             if year > 2060:
-                ad_date = bs_to_ad(ex['date'])
+                ad_date = bs_to_ad(date_str)
             else:
-                ad_date = datetime.strptime(ex['date'], '%Y-%m-%d').date()
+                ad_date = datetime.strptime(date_str, '%Y-%m-%d').date()
             prepared_exams.append({
                 **ex,
                 'ad_date': ad_date,
@@ -172,12 +174,14 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
     subject_total_chaps = {}
     chapter_idx_map: Dict[str, Any] = {}
     subject_day_count = {}
+    subject_total_allocated = {}
     
     for ex_item in prepared_exams:
         s_name = str(ex_item['name'])
         subject_total_chaps[s_name] = len(ex_item.get('chapters', []))
         chapter_idx_map[s_name] = 0
         subject_day_count[s_name] = 0
+        subject_total_allocated[s_name] = 0
     
     exam_map = {ex['ad_date']: ex for ex in prepared_exams}
     final_days = []
@@ -214,7 +218,7 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
         for ex_obj in next_exams:
             s_name = str(ex_obj.get('name', ''))
             days_left = float((ex_obj['ad_date'] - date).days)
-            urgency = 1.0 / (days_left + 0.1)
+            urgency = 1.0 / (days_left + 1.5)
             
             tot = float(subject_total_chaps.get(s_name, 1.0))
             done = float(chapter_idx_map.get(s_name, 0.0))
@@ -229,14 +233,16 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
                     avg_m = sum([float(v) for v in m_data.values()]) / len(m_data)
                     mast = 1.0 + ((100.0 - avg_m) / 100.0)
             
-            score = urgency * cov * diff * mast
-            if float(subject_day_count.get(s_name, 0)) > 2.0: score *= 0.5
+            alloc_pen = 1.0 / (float(subject_total_allocated.get(s_name, 0)) + 1.0)
+            score = urgency * cov * diff * mast * alloc_pen
+            if float(subject_day_count.get(s_name, 0)) >= 2.0: score *= 0.1
             candidates.append({"ex": ex_obj, "score": score})
         
         candidates.sort(key=lambda x: x['score'], reverse=True)
         best_ex = candidates[0]['ex']
         best_name = str(best_ex.get('name', ''))
         subject_day_count[best_name] = int(subject_day_count.get(best_name, 0)) + 1
+        subject_total_allocated[best_name] = int(subject_total_allocated.get(best_name, 0)) + 1
         for k in list(subject_day_count.keys()):
             if k != best_name: subject_day_count[k] = 0
 
