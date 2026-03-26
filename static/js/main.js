@@ -634,7 +634,7 @@ function renderFocusCard(days, clientDateStr) {
     let hudHtml = `<div style="display: flex; gap: 1rem; overflow-x: auto; margin-bottom: 2rem; padding-bottom: 0.5rem; -webkit-overflow-scrolling: touch;">`;
     if (wizardInputs && wizardInputs.exams) {
         wizardInputs.exams.forEach(ex => {
-            let daysLeft = 'Completed';
+            let daysLeft = 'Done ✓';
             let priorityColor = '#22c55e'; // default green
             
             // Find exam day in 'days' array
@@ -652,16 +652,16 @@ function renderFocusCard(days, clientDateStr) {
                     daysLeft = 'TODAY';
                     priorityColor = '#d946ef'; // Pink
                 }
-            } else {
-                daysLeft = 'Done ✓';
             }
-            
-            hudHtml += `
-            <div class="glass-card element-enter" style="flex: 0 0 auto; min-width: 160px; padding: 1rem; border-left: 4px solid ${priorityColor}; background: rgba(255,255,255,0.03);">
-                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">${ex.name}</div>
-                <div style="font-size: 1.5rem; font-weight: 900; color: ${priorityColor}; line-height: 1;">${daysLeft}</div>
-                <div style="font-size: 0.65rem; opacity: 0.5; margin-top: 4px;">BS: ${ex.date}</div>
-            </div>`;
+            // Hide completed exams from HUD to reduce clutter
+            if (daysLeft !== 'Done ✓' && daysLeft !== 'Ended' && daysLeft !== 'Completed') {
+                hudHtml += `
+                <div class="glass-card element-enter" style="flex: 0 0 auto; min-width: 160px; padding: 1rem; border-left: 4px solid ${priorityColor}; background: rgba(255,255,255,0.03);">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">${ex.name}</div>
+                    <div style="font-size: 1.5rem; font-weight: 900; color: ${priorityColor}; line-height: 1;">${daysLeft}</div>
+                    <div style="font-size: 0.65rem; opacity: 0.5; margin-top: 4px;">BS: ${ex.date}</div>
+                </div>`;
+            }
         });
     }
     hudHtml += `</div>`;
@@ -1461,6 +1461,77 @@ function toggleSettings() {
         modal.style.display = 'flex';
         modal.querySelector('.modal-content').classList.add('animate-in');
         voiceSystem.updateUI();
+    }
+}
+
+// --- FOCUS THEMES & YOUTUBE ---
+let currentFocusTheme = 'library';
+let ytPlayer = null;
+
+function setFocusTheme(theme) {
+    currentFocusTheme = theme;
+    const focusMode = document.getElementById('focus-mode');
+    focusMode.setAttribute('data-theme', theme);
+    
+    // Update active button state
+    document.querySelectorAll('.theme-selector .control-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${theme}'`));
+    });
+
+    // Hide YouTube input if switching themes
+    document.getElementById('youtube-focus-input').style.display = 'none';
+    
+    // Stop YouTube player if active
+    if (ytPlayer && ytPlayer.stopVideo) {
+        ytPlayer.stopVideo();
+        document.getElementById('yt-player-container').style.display = 'none';
+    }
+
+    voiceSystem.trigger('theme_switch');
+}
+
+function toggleYouTubeInput() {
+    const inputArea = document.getElementById('youtube-focus-input');
+    const isVisible = inputArea.style.display === 'block';
+    
+    // Close other themes? No, just show input
+    inputArea.style.display = isVisible ? 'none' : 'block';
+    if (!isVisible) {
+        document.getElementById('yt-url').focus();
+    }
+}
+
+function loadYouTubeFocus() {
+    const url = document.getElementById('yt-url').value;
+    if (!url) return alert("Please enter a valid YouTube URL");
+
+    let videoId = '';
+    if (url.includes('v=')) videoId = url.split('v=')[1].split('&')[0];
+    else if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1].split('?')[0];
+
+    if (!videoId) return alert("Could not extract Video ID");
+
+    document.getElementById('yt-player-container').style.display = 'block';
+    document.getElementById('youtube-focus-input').style.display = 'none';
+
+    if (!ytPlayer) {
+        // Load YouTube IFrame API
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        window.onYouTubeIframeAPIReady = () => {
+            ytPlayer = new YT.Player('yt-player', {
+                height: '100%',
+                width: '100%',
+                videoId: videoId,
+                playerVars: { 'autoplay': 1, 'controls': 1, 'loop': 1, 'playlist': videoId },
+                events: { 'onReady': (e) => e.target.playVideo() }
+            });
+        };
+    } else {
+        ytPlayer.loadVideoById(videoId);
     }
 }
 

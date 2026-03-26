@@ -289,11 +289,23 @@
                 <!-- LEFT: IMMERSIVE TIMER & COMPANION -->
                 <div class="timer-sector">
                     <!-- Environment Themes -->
-                    <div class="theme-selector" style="display: flex; gap: 1rem; margin-bottom: 2rem; justify-content: center; flex-wrap: wrap;">
-                        <button onclick="setFocusTheme('library')" class="control-btn active" style="font-size: 0.75rem;">Night Library</button>
-                        <button onclick="setFocusTheme('mountain')" class="control-btn" style="font-size: 0.75rem;">Mountain Cabin</button>
-                        <button onclick="setFocusTheme('zen')" class="control-btn" style="font-size: 0.75rem;">Zen Desk</button>
-                        <button onclick="setFocusTheme('space')" class="control-btn" style="font-size: 0.75rem;">Space Station</button>
+                    <div class="theme-selector" style="display: flex; gap: 0.5rem; margin-bottom: 2rem; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="setFocusTheme('library')" class="control-btn active" title="Night Library">📚</button>
+                        <button onclick="setFocusTheme('mountain')" class="control-btn" title="Mountain Cabin">⛰️</button>
+                        <button onclick="setFocusTheme('zen')" class="control-btn" title="Zen Desk">🧘</button>
+                        <button onclick="setFocusTheme('space')" class="control-btn" title="Space Station">🚀</button>
+                        <button onclick="toggleYouTubeInput()" class="control-btn" title="YouTube Focus">🎬</button>
+                    </div>
+
+                    <!-- YouTube Input Area -->
+                    <div id="youtube-focus-input" style="display: none; margin-bottom: 2rem; width: 100%; max-width: 400px; margin-left: auto; margin-right: auto;">
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="yt-url" class="panda-input" placeholder="Paste YouTube URL..." style="flex: 1; padding: 0.5rem;">
+                            <button onclick="loadYouTubeFocus()" class="btn-primary" style="padding: 0.5rem 1rem;">Load</button>
+                        </div>
+                    </div>
+                    <div id="yt-player-container" style="display: none; margin-bottom: 2rem; border-radius: 12px; overflow: hidden; width: 100%; max-width: 400px; margin-left: auto; margin-right: auto; aspect-ratio: 16/9;">
+                        <div id="yt-player"></div>
                     </div>
 
                     <div class="glow-ring-container">
