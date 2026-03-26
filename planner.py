@@ -194,8 +194,7 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
                 is_intensive_mode = True
             else:
                 # 2b. 'Wise' Selection (weighted by topics left, difficulty, and stale penalty)
-                best_item = None
-                max_score = -1.0
+                subject_scores = []
                 
                 for ex in next_exams:
                     s_name = ex['name']
@@ -206,22 +205,26 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
                     rem_topics = max(1, len(ex.get('chapters', [])) - subject_progress.get(s_name, 0))
                     
                     # Stale Penalty (encourage rotation)
+                    # If this was studied yesterday AND we have other subjects, penalize it heavily to force rotation
+                    last_subject = final_days[-1]['subject'] if final_days else None
+                    rotation_penalty = 1.0
+                    if s_name == last_subject and len(next_exams) > 1:
+                        rotation_penalty = 0.1 # Force a switch
+                    
                     days_since_last = 7
                     if s_name in last_studied_date:
                         days_since_last = (date - last_studied_date[s_name]).days
-                    stale_boost = min(3.0, 1.0 + (days_since_last * 0.2))
+                    stale_boost = min(3.0, 1.0 + (days_since_last * 0.4))
                     
                     mastery_data = topic_mastery_map.get(s_name, {})
                     avg_m = sum(float(v) for v in mastery_data.values()) / len(mastery_data) / 100.0 if mastery_data else 0.0
                     
-                    # Perfected Score Formula
-                    score = (diff * rem_topics * (1.2 - avg_m) * stale_boost) / days_left
-                    
-                    if score > max_score:
-                        max_score = score
-                        best_item = {"ex": ex, "score": score}
+                    # Perfected Score Formula with Rotation Penalty
+                    score = (diff * rem_topics * (1.2 - avg_m) * stale_boost * rotation_penalty) / days_left
+                    subject_scores.append({"ex": ex, "score": score})
                 
-                if best_item:
+                if subject_scores:
+                    best_item = max(subject_scores, key=lambda x: x['score'])
                     selected_subject = best_item['ex']['name']
 
         # 3. Process Revisions (ONLY for the selected subject)
