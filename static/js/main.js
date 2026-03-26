@@ -653,7 +653,7 @@ function renderFocusCard(days, clientDateStr) {
                     priorityColor = '#d946ef'; // Pink
                 }
             } else {
-                daysLeft = 'Ended';
+                daysLeft = 'Done ✓';
             }
             
             hudHtml += `
@@ -686,10 +686,9 @@ function renderFocusCard(days, clientDateStr) {
                          onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.transform='scale(1)'">
                         
                         <div style="display: flex; flex-direction: column;">
-                            <span style="font-weight: 700; font-size: 1.1rem;">${t.activity}</span>
-                            <span style="font-size: 0.75rem; opacity: 0.7; color: ${taskColor}; margin-top: 2px; text-transform: uppercase;">
-                                <i data-lucide="${t.type === 'study' ? 'book-open' : (t.type === 'revision' ? 'refresh-cw' : (t.type === 'exam' ? 'award' : 'coffee'))}" style="width: 12px; height: 12px; display:inline-block; vertical-align:middle; margin-right: 2px;"></i>
-                                ${t.type} ${t.subject ? `• ${t.subject}` : ''}
+                            <span style="font-weight: 700; font-size: 0.95rem;">${t.activity}</span>
+                            <span style="font-size: 0.7rem; opacity: 0.7; color: ${taskColor}; margin-top: 2px; text-transform: uppercase;">
+                                ${t.type === 'study' ? '📖' : (t.type === 'revision' ? '🔄' : (t.type === 'exam' ? '🏆' : (t.type === 'meal' ? '🍽️' : '☕')))} ${t.type} ${t.subject ? `• ${t.subject}` : ''}
                             </span>
                         </div>
                         <div style="text-align: right;">

@@ -10,7 +10,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=18">
 
     <!-- PWA Settings -->
     <link rel="manifest" href="{% static 'manifest.json' %}">
@@ -515,7 +515,7 @@
         </div>
         <div id="snow-container"></div>
 
-        <script src="{% static 'js/main.js' %}"></script>
+        <script src="{% static 'js/main.js' %}?v=18"></script>
         <script>
             // CSRF Token for Django
             window.CSRF_TOKEN = "{{ csrf_token }}";
