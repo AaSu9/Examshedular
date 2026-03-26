@@ -551,6 +551,15 @@ function renderCalendarGrid(days, clientDateStr) {
         <div class="calendar-grid">
     `;
 
+    // Add empty offset cells so the first day lands on the correct weekday column
+    if (days.length > 0 && days[0].ad_date) {
+        const firstDate = new Date(days[0].ad_date + 'T00:00:00');
+        const startDow = firstDate.getDay(); // 0=Sun, 1=Mon, ..., 4=Thu, etc.
+        for (let e = 0; e < startDow; e++) {
+            gridHtml += `<div class="calendar-day" style="opacity:0.15;"></div>`;
+        }
+    }
+
     days.forEach((day, idx) => {
         let isCompleted = false;
         let isToday = false;
@@ -563,11 +572,9 @@ function renderCalendarGrid(days, clientDateStr) {
         const examClass = day.is_exam_day ? 'is-exam' : '';
         const subColor = getSubjectColor(day.subject);
 
-        // Extract day number from AD date if possible, else BS
         let dayNum = day.bs_date.split('-')[2];
         if (day.ad_date) dayNum = day.ad_date.split('-')[2];
 
-        // Green for Exams (User Request)
         const examIndicator = day.is_exam_day
             ? `<div style="font-size:0.6rem; color:#22c55e; font-weight:800; text-shadow: 0 0 10px rgba(34, 197, 94, 0.4);">EXAM DAY</div>`
             : '';
@@ -583,6 +590,15 @@ function renderCalendarGrid(days, clientDateStr) {
             </div>
         `;
     });
+
+    // Fill trailing empty cells to complete the last row
+    if (days.length > 0 && days[days.length - 1].ad_date) {
+        const lastDate = new Date(days[days.length - 1].ad_date + 'T00:00:00');
+        const endDow = lastDate.getDay();
+        for (let e = endDow + 1; e <= 6; e++) {
+            gridHtml += `<div class="calendar-day" style="opacity:0.15;"></div>`;
+        }
+    }
 
     gridHtml += `</div></div>`;
     return gridHtml;
