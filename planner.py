@@ -112,6 +112,9 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
     last_studied_date = {} # subject_name -> date
     revision_queue = [] # list of {subject, date_to_revise, type}
     
+    # Chapter progress tracker
+    subject_progress = {ex['name']: 0 for ex in prepared_exams}
+    
     for i, date in enumerate(all_dates):
         d_status = "today" if date == today_ad else "upcoming"
         effective_start_time = start_time
@@ -205,7 +208,11 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
             target_ex = next((e for e in prepared_exams if e['name'] == selected_subject), None)
             if target_ex:
                 chaps = target_ex['chapters']
-                focus = str(chaps[0]) if chaps else "Core Concepts"
+                idx = subject_progress[selected_subject]
+                focus = str(chaps[idx % len(chaps)]) if chaps else "Core Concepts"
+                
+                # Increment progress for next time this subject is picked
+                subject_progress[selected_subject] += 1
                 
                 # No 4-hour cap; use all available time for deep study
                 chunks, current_dt = get_micro_chunks(selected_subject, focus, daily_mins_avail, session_mins, break_mins, "study", current_dt)
