@@ -16,7 +16,14 @@ def get_micro_chunks(subject_name: str, focus_area: str, allocated_mins: float, 
     plan = []
     remaining = float(allocated_mins)
     
-    phases = ["Deep Work: Concepts", "Active Recall", "Past Paper Sprint", "Feynman Review"] if plan_type == "study" else ["Spaced Revision", "Weak Point Polish", "Flashcard Drill"]
+    phases = []
+    if plan_type == "intensive":
+        phases = ["Rapid Concept Scan", "Past Paper Blitz", "Formula Drill", "High-Yield Review"]
+    elif plan_type == "study":
+        phases = ["Deep Work: Concepts", "Active Recall", "Past Paper Sprint", "Feynman Review"]
+    else:
+        phases = ["Spaced Revision", "Weak Point Polish", "Flashcard Drill"]
+        
     sessions_count = 0
     
     while remaining > 0:
@@ -47,7 +54,7 @@ def get_micro_chunks(subject_name: str, focus_area: str, allocated_mins: float, 
         plan.append({
             "time": f"{current_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}",
             "activity": f"{phase}: {focus_area} ({subject_name})",
-            "type": plan_type,
+            "type": "study" if plan_type == "intensive" else plan_type,
             "minutes": int(dur),
             "subject": subject_name
         })
@@ -168,29 +175,54 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
             continue
 
         selected_subject = None
+        is_intensive_mode = False
+        
         if exam_today:
             selected_subject = exam_today['name']
         else:
-            # Calculate Priority Scores to pick the ONE best subject
-            best_item = None
-            max_score = -1.0
-            
+            # 2a. Check for Lockdown Phase (Exam within 7 days)
+            lockdown_subject = None
+            min_days = 99
             for ex in next_exams:
-                s_name = ex['name']
-                days_left = max(0.1, float((ex['ad_date'] - date).days))
-                diff = float(ex['difficulty'])
-                topics_count = float(ex['total_topics'])
-                
-                m_data = topic_mastery_map.get(s_name, {})
-                avg_mastery = sum(float(v) for v in m_data.values()) / len(m_data) / 100.0 if m_data else 0.0
-                
-                score = (diff * topics_count * (1.1 - avg_mastery)) / days_left
-                if score > max_score:
-                    max_score = score
-                    best_item = {"ex": ex, "score": score}
+                d_left = (ex['ad_date'] - date).days
+                if d_left <= 7 and d_left < min_days:
+                    min_days = d_left
+                    lockdown_subject = ex['name']
             
-            if best_item:
-                selected_subject = best_item['ex']['name']
+            if lockdown_subject:
+                selected_subject = lockdown_subject
+                is_intensive_mode = True
+            else:
+                # 2b. 'Wise' Selection (weighted by topics left, difficulty, and stale penalty)
+                best_item = None
+                max_score = -1.0
+                
+                for ex in next_exams:
+                    s_name = ex['name']
+                    days_left = max(1, (ex['ad_date'] - date).days)
+                    diff = float(ex['difficulty'])
+                    
+                    # Remaining Topics
+                    rem_topics = max(1, len(ex.get('chapters', [])) - subject_progress.get(s_name, 0))
+                    
+                    # Stale Penalty (encourage rotation)
+                    days_since_last = 7
+                    if s_name in last_studied_date:
+                        days_since_last = (date - last_studied_date[s_name]).days
+                    stale_boost = min(3.0, 1.0 + (days_since_last * 0.2))
+                    
+                    mastery_data = topic_mastery_map.get(s_name, {})
+                    avg_m = sum(float(v) for v in mastery_data.values()) / len(mastery_data) / 100.0 if mastery_data else 0.0
+                    
+                    # Perfected Score Formula
+                    score = (diff * rem_topics * (1.2 - avg_m) * stale_boost) / days_left
+                    
+                    if score > max_score:
+                        max_score = score
+                        best_item = {"ex": ex, "score": score}
+                
+                if best_item:
+                    selected_subject = best_item['ex']['name']
 
         # 3. Process Revisions (ONLY for the selected subject)
         if selected_subject:
@@ -214,8 +246,9 @@ def generate_study_plan(exams_list: List[Dict], daily_study_hours: float = 8.0, 
                 # Increment progress for next time this subject is picked
                 subject_progress[selected_subject] += 1
                 
-                # No 4-hour cap; use all available time for deep study
-                chunks, current_dt = get_micro_chunks(selected_subject, focus, daily_mins_avail, session_mins, break_mins, "study", current_dt)
+                # No 4-hour cap; use all available time
+                p_type = "intensive" if is_intensive_mode else "study"
+                chunks, current_dt = get_micro_chunks(selected_subject, focus, daily_mins_avail, session_mins, break_mins, p_type, current_dt)
                 day_tasks.extend(chunks)
                 
                 # Schedule future revisions
